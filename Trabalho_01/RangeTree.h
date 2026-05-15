@@ -82,23 +82,25 @@ public:
       });
     _root = new Node{_x<D>(points[_indices[n / 2]]), _x<D>(points[_indices[0]]), _x<D>(points[_indices[n - 1]]), -1, 0}; // o valor de divisão é o valor da dimensão D do ponto mediano
     // Calcula o cout e o fist
+    Calcula_Cout_Fist(_root,points,_indices);
   }
 
-  void Calcula_Cout_Fist(Node* node, const A& points)
+  // função recursiva para construir a árvore, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
+  Node* build(const A& points, const IndexArray& indices, int i,int n)
+  {
+    
+  }
+
+  void Calcula_Cout_Fist(Node* node, const A& points,const IndexArray& indices)
   {
     for(int i=0; i < n;i++)
     {
-      if(_x<D>(points[_indices[i]]) == _root->Split_Value)
+      if(_x<D>(points[indices[i]]) == _root->Split_Value)
       {
         if (_root->fist == -1) _root->fist = i; // se pegar _root->fist - 1 vai poder somar o cout com o indice do ponto atual e vai dar o numero de pontos que tem a mesma coordenada D do valor de divisão
         _root->cout++;
       }
     }
-  }
-
-  void build(const A& points, const IndexArray& indices, int i,int n)
-  {
-    
   }
 
   // Funçao de busca para percorere a arvore e encontar os pontos que vao ser enviados a funçao f
