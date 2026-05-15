@@ -10,7 +10,7 @@ namespace tcii::cg
 { // begin namespace tcii::cg
 
 namespace rtree
-{ // begin namespace rtree
+ // begin namespace rtree
 
 using index_t = unsigned;
 using IndexArray = Array<index_t>;
@@ -157,7 +157,7 @@ private:
 
 }; // BBST
 
-} // end namespace rtree
+ // end namespace rtree
 
 template <typename P, typename A>
 class RangeTree
