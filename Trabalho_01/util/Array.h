@@ -41,7 +41,7 @@ public:
 
 /////////////////////////////////////////////////////////////////////
 //
-// Array: array class
+// Array: array class 
 // =====
 template <typename T, typename Allocator = ArrayAllocator>
 class Array

@@ -1,6 +1,12 @@
 # Topicos_II
 Vai conter os dois trabalhos de Topicos-II.
 
+## Como compilar
+Para poder compilar vai ate a pasta do trabalho e use esse comando:
+```bash
+g++ -I. *.cpp -o main
+```
+
 ## Primeiro Trabalho
 Vai ser contruir uma RTree com as coordenadas.
 

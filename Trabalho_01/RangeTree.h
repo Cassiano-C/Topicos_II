@@ -41,7 +41,7 @@ public:
   using PointFunc = rtree::PointFunc<A>;
 
   // função expecializada para construir a árvore de dimensão D = 1, onde cada nó da árvore contém um índice para o ponto correspondente
-  void build(const A& points)
+  void build(const A& points,const IndexArray* indices,const int n)
   {
     // insert your code here
   }
@@ -51,6 +51,20 @@ public:
   {
     // insert your code here
     return 0;
+  }
+  
+  void print_tree(int indent = 0) const
+  {
+    std::cout << std::string(indent, ' ') << "[BST D=1] (Número de nós: " << (_indices ? _indices->size() : 0) << ")\n";
+    if (_indices)
+    {
+      for (size_t i = 0; i < _indices->size(); ++i)
+      {
+        size_t idx = (*_indices)[i];
+        std::cout << std::string(indent + 2, ' ') << "├── Índice: " << idx 
+                  << " | Valor: " << _x<1>(points[idx]) << "\n";
+      }
+    }
   }
 
 }; // BBST
@@ -69,37 +83,41 @@ public:
   }
 
   // função para contruir a arvore de dimenção D > 1, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
-  void build(const A& points,index_t* indices,int n)
+  void build(const A& points,const IndexArray* indices,const int n)
   {
     assert(!_root); // o assert vai garantir q a arvore seja construida apenas uma vez.
-    _indices = new index_t[n];
-    std::iota(_indices, _indices + n, 0); // preenche o vetor de indices ordenados com os indices dos pontos
-    
+    _indices = new IndexArray(n);
     if(indices != nullptr && n > 0)
     {
-      _indices = indices;
+      for(int i = 0; i < n; i++)
+      {
+        (*_indices)[i] = (*indices)[i];
+      }
+    }else
+    {
+      std::iota((*_indices).begin(), (*_indices).end(), 0); // preenche o vetor de indices ordenados com os indices dos pontos
     }
     
-    std::sort(_indices->begin(), _indices->end(),
+    std::sort((*_indices).begin(), (*_indices).end(),
       [&points](int i1, int i2)
       {
         return _x<D>(points[i1]) < _x<D>(points[i2]);
       });
     
     int i = n / 2;
-    _root = build_recursivo(points, nullptr, 0, n);
+    _root = build_recursivo(points, 0, n);
 
     print_tree();
   }
 
   // função recursiva para construir a árvore, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
-  Node* build_recursivo(const A& points, int inicio,int fim)
+  auto* build_recursivo(const A& points, int inicio,int fim)
   {
 
-    if(inicio >= fim) return nullptr;
+    if(inicio >= fim) return static_cast<Node*>(nullptr);
 
     int meio = (inicio + fim) / 2;
-    Node* newNode = new Node(_x<D>(points[_indices[meio]]), _x<D>(points[_indices[inicio]]), _x<D>(points[_indices[fim-1]]), meio, 0);
+    Node* newNode = new Node(_x<D>(points[(*_indices)[meio]]), _x<D>(points[(*_indices)[inicio]]), _x<D>(points[(*_indices)[fim-1]]), meio, 0);
     Calcula_Cout_Fist(*newNode, points, inicio, fim);
 
     int tamanho_conjunto_canonic = fim - inicio;
@@ -118,24 +136,24 @@ public:
     return newNode;
   }
 
-  index_t* Gera_indises(int inicio,int fim, int n)
+  IndexArray* Gera_indises(int inicio,int fim, int n)
   {
-    index_t* indices = new IndexArray(n);
+    IndexArray* indices = new IndexArray(n);
     int k = 0;
     for(int j=inicio; j < fim; j++)
     {
-      indices[k] = _indices[j];
+      indices[k] = (*_indices)[j];
       k++;
     }
     return indices;
   }
 
-  void Calcula_Cout_Fist(Node &node, const A& points,int inicio,int fim)
+  void Calcula_Cout_Fist(auto &node, const A& points,int inicio,int fim)
   {
     int n = (inicio - fim) / 2;
     for(int i=0; i < n;i++)
     {
-      if(_x<D>(points[_indices[i]]) == _root->Split_Value)
+      if(_x<D>(points[(*_indices)[i]]) == _root->Split_Value)
       {
         if (i < node.fist) node.fist = i; // se pegar _root->fist - 1 vai poder somar o cout com o indice do ponto atual e vai dar o numero de pontos que tem a mesma coordenada D do valor de divisão
         node.cout++;
@@ -145,7 +163,7 @@ public:
 
     for(int i = n+1; i < fim;i++)
     {
-      if(_x<D>(points[_indices[i]]) == _root->Split_Value)
+      if(_x<D>(points[(*_indices)[i]]) == _root->Split_Value)
       {
         node.cout++;
         node.depois++;
@@ -175,7 +193,7 @@ public:
 private:
 
   // Função privada recursiva para desenhar a estrutura
-  void print_recursivo(Node* node, int indent) const
+  void print_recursivo(auto node, int indent) const
   {
     if (!node) return;
 
@@ -248,7 +266,7 @@ private:
   }; // Node
 
   Node* _root{};
-  IndexArray _indices;
+  IndexArray* _indices;
 
 }; // BBST
 
