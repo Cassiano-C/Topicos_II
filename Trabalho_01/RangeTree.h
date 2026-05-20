@@ -10,8 +10,8 @@ namespace tcii::cg
 { // begin namespace tcii::cg
 
 namespace rtree
+{
  // begin namespace rtree
-
 using index_t = unsigned;
 using IndexArray = Array<index_t>;
 
@@ -67,6 +67,21 @@ public:
     return 0;
   }
 
+
+  void print_tree(int indent = 0) const
+  {
+    std::cout << std::string(indent, ' ') << "[BST D=1] (Número de nós: " << (_indices ? _indices->size() : 0) << ")\n";
+    if (_indices)
+    {
+      for (size_t i = 0; i < _indices->size(); ++i)
+      {
+        size_t idx = (*_indices)[i];
+        std::cout << std::string(indent + 2, ' ') << "├── Índice: " << idx 
+                  << " | Valor: " << _x<1>(points[idx]) << "\n";
+      }
+    }
+  }
+
 private:
   IndexArray _indices;
   int tamanho;
@@ -86,36 +101,91 @@ public:
   }
 
   // função para contruir a arvore de dimenção D > 1, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
-  void build(const A& points)
+
+  void build(const A& points,const IndexArray* indices,const int n)
   {
     assert(!_root); // o assert vai garantir q a arvore seja construida apenas uma vez.
-    int n = points.size();
-    _indices = new index_t[n];
-    std::iota(_indices, _indices + n, 0); // preenche o vetor de indices ordenados com os indices dos pontos
-    std::sort(_indices, _indices + n,
+    _indices = new IndexArray(n);
+    if(indices != nullptr && n > 0)
+    {
+      for(int i = 0; i < n; i++)
+      {
+        (*_indices)[i] = (*indices)[i];
+      }
+    }else
+    {
+      std::iota((*_indices).begin(), (*_indices).end(), 0); // preenche o vetor de indices ordenados com os indices dos pontos
+    }
+    
+    std::sort((*_indices).begin(), (*_indices).end(),
       [&points](int i1, int i2)
       {
         return _x<D>(points[i1]) < _x<D>(points[i2]);
       });
-    _root = new Node{_x<D>(points[_indices[n / 2]]), _x<D>(points[_indices[0]]), _x<D>(points[_indices[n - 1]]), -1, 0}; // o valor de divisão é o valor da dimensão D do ponto mediano
-    // Calcula o cout e o fist
-    Calcula_Cout_Fist(_root,points,_indices);
+    
+    int i = n / 2;
+    _root = build_recursivo(points, 0, n);
+
+    print_tree();
   }
 
   // função recursiva para construir a árvore, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
-  Node* build(const A& points, const IndexArray& indices, int i,int n)
+  auto* build_recursivo(const A& points, int inicio,int fim)
   {
-    
+
+    if(inicio >= fim) return static_cast<Node*>(nullptr);
+
+    int meio = (inicio + fim) / 2;
+    Node* newNode = new Node(_x<D>(points[(*_indices)[meio]]), _x<D>(points[(*_indices)[inicio]]), _x<D>(points[(*_indices)[fim-1]]), meio, 0);
+    Calcula_Cout_Fist(*newNode, points, inicio, fim);
+
+    int tamanho_conjunto_canonic = fim - inicio;
+    if(tamanho_conjunto_canonic > 0)
+    {
+      newNode->_assocTree = new AssociatedTree;
+      newNode->_assocTree->build(points, Gera_indises(inicio, fim, tamanho_conjunto_canonic), tamanho_conjunto_canonic);
+    }
+
+    if(tamanho_conjunto_canonic > 1)
+    {
+      newNode->_childL = build_recursivo(points, inicio, meio - newNode->antes);
+      newNode->_childR = build_recursivo(points, (meio + 1) + newNode->depois, fim);
+    }
+
+    return newNode;
   }
 
-  void Calcula_Cout_Fist(Node* node, const A& points,const IndexArray& indices)
+  IndexArray* Gera_indises(int inicio,int fim, int n)
   {
+    IndexArray* indices = new IndexArray(n);
+    int k = 0;
+    for(int j=inicio; j < fim; j++)
+    {
+      indices[k] = (*_indices)[j];
+      k++;
+    }
+    return indices;
+  }
+
+  void Calcula_Cout_Fist(auto &node, const A& points,int inicio,int fim)
+  {
+    int n = (inicio - fim) / 2;
     for(int i=0; i < n;i++)
     {
-      if(_x<D>(points[indices[i]]) == _root->Split_Value)
+      if(_x<D>(points[(*_indices)[i]]) == _root->Split_Value)
       {
-        if (_root->fist == -1) _root->fist = i; // se pegar _root->fist - 1 vai poder somar o cout com o indice do ponto atual e vai dar o numero de pontos que tem a mesma coordenada D do valor de divisão
-        _root->cout++;
+        if (i < node.fist) node.fist = i; // se pegar _root->fist - 1 vai poder somar o cout com o indice do ponto atual e vai dar o numero de pontos que tem a mesma coordenada D do valor de divisão
+        node.cout++;
+        node.antes++;
+      }
+    }
+
+    for(int i = n+1; i < fim;i++)
+    {
+      if(_x<D>(points[(*_indices)[i]]) == _root->Split_Value)
+      {
+        node.cout++;
+        node.depois++;
       }
     }
   }
@@ -127,7 +197,50 @@ public:
     return 0;
   }
 
+  // Função pública para disparar a impressão a partir da raiz
+  void print_tree(int indent = 0) const
+  {
+    if (!_root)
+    {
+      std::cout << std::string(indent, ' ') << "[Árvore Vazia em D=" << D << "]\n";
+      return;
+    }
+    std::cout << std::string(indent, ' ') << "=== ÁRVORE DIMENSÃO D = " << D << " ===\n";
+    print_recursivo(_root, indent);
+  }
+
 private:
+
+  // Função privada recursiva para desenhar a estrutura
+  void print_recursivo(auto node, int indent) const
+  {
+    if (!node) return;
+
+    // 1. Imprime o nó atual (Pivô e limites)
+    std::string espaco(indent, ' ');
+    std::cout << espaco << "├── [Nó] Pivô: " << node->Split_Value 
+              << " | Faixa: [" << node->Min_Valure << ", " << node->Max_Valure << "]\n";
+
+    // 2. Se houver árvore associada (dimensão D-1), imprime ela com recuo extra
+    if (node->_assocTree)
+    {
+      std::cout << espaco << "│   └── Membros Associados (D=" << D-1 << "):\n";
+      node->_assocTree->print_tree(indent + 8); // Entra na subárvore com mais recuo
+    }
+
+    // 3. Imprime os filhos esquerdo e direito recursivamente
+    if (node->_childL)
+    {
+      std::cout << espaco << "│   ├── Esquerda:\n";
+      print_recursivo(node->_childL, indent + 4);
+    }
+    if (node->_childR)
+    {
+      std::cout << espaco << "│   └── Direita:\n";
+      print_recursivo(node->_childR, indent + 4);
+    }
+  }
+
   using real = typename P::value_type;
   using AssociatedTree = BBST<D - 1, P, A>;
 
@@ -145,36 +258,38 @@ private:
     real Max_Valure;
     int fist;
     int cout;
-    
+
+    int antes;
+    int depois;
+
     Node* _childL{};
     Node* _childR{};
     AssociatedTree* _assocTree{};
-    IndexArray* Conjunto_Cano;
+    // IndexArray* Conjunto_Cano;
 
     Node(real Split_Value, real Min_Valure, real Max_Valure, int fist, int cout):
       Split_Value{Split_Value},
       Min_Valure{Min_Valure},
       Max_Valure{Max_Valure},
       fist{fist},
-      cout{cout}
+      cout{cout},
+      antes{0},
+      depois{0},
+      _childL{nullptr},
+      _childR{nullptr},
+      _assocTree{nullptr}
     {
       // do nothing
     }
 
   }; // Node
 
-  struct Conjunto_Nodal
-  {
-    int fist;
-    int cout;
-  };
-
   Node* _root{};
-  IndexArray _indices;
+  IndexArray* _indices;
 
 }; // BBST
 
- // end namespace rtree
+}// end namespace rtree
 
 template <typename P, typename A>
 class RangeTree
@@ -198,7 +313,7 @@ public:
 
   void build()
   {
-    _mainTree.build(_points);
+    _mainTree.build(_points, nullptr, _points.size());
   }
 
   auto query(const Bounds& bounds, PointFunc f) const
