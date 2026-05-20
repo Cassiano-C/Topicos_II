@@ -1,4 +1,5 @@
 #include "graphics/Bounds3.h"
+#include "graphics/Vec3.h"
 #include "RangeTree.h"
 #include "Utils.h"
 #include <cstdio>
@@ -65,8 +66,8 @@ main(int argc, char** argv)
 
   rt.build();
   puts("**RT query");
-  np = rt.query(bounds, printPoint);
-  printf("%zu points found\n", np);
+  /*np = rt.query(bounds, printPoint);
+  printf("%zu points found\n", np);*/
   puts("Press any key to exit...");
   (void)getchar();
   return 0;
