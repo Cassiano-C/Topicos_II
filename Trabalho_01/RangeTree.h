@@ -41,18 +41,35 @@ public:
   using PointFunc = rtree::PointFunc<A>;
 
   // função expecializada para construir a árvore de dimensão D = 1, onde cada nó da árvore contém um índice para o ponto correspondente
-  void build(const A& points)
+  void build(const A& points, const IndexArray* indices, int tamanho)
   {
-    // insert your code here
+    // busca o valor do ponto: _x<1>(points[1])
+    _indices = indices;
+    std::sort(_indices->begin(), _indices->end(),
+      [&points](int i1, int i2)
+      {
+        return _x<1>(points[i1]) < _x<1>(points[i2]);
+      });
   }
  
   // função de busca para percorrer a árvore e encontrar os pontos que vão ser enviados à função f
   size_t query(const A& points, const Bounds& bounds, PointFunc f) const
-  {
-    // insert your code here
+  { 
+    for (int i = 0; i < tamanho; i++){
+      if (bounds.min() > _x<1>(points[_indices[i]])) {
+        continue;
+      } else if (bounds.max() >= _x<1>(points[_indices[i]])) {
+        f(points, _indices[i]);
+      } else {
+        break;
+      }
+    }
     return 0;
   }
 
+private:
+  IndexArray _indices;
+  int tamanho;
 }; // BBST
 
 // Template para D > 1, onde a árvore é uma estrutura de árvore binária balanceada (BBST) com árvores associadas para as dimensões restantes
@@ -68,7 +85,7 @@ public:
     delete _root;
   }
 
-  // função para contruir a arvore de dimenção D < 1, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
+  // função para contruir a arvore de dimenção D > 1, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
   void build(const A& points)
   {
     assert(!_root); // o assert vai garantir q a arvore seja construida apenas uma vez.
