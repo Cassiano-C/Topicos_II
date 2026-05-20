@@ -5,6 +5,7 @@
 #include "PointTraits.h"
 #include <functional>
 #include <numeric>
+#include <sstream>
 
 namespace tcii::cg
 { // begin namespace tcii::cg
@@ -41,11 +42,16 @@ public:
   using PointFunc = rtree::PointFunc<A>;
 
   // função expecializada para construir a árvore de dimensão D = 1, onde cada nó da árvore contém um índice para o ponto correspondente
-  void build(const A& points, const IndexArray* indices, int tamanho)
+  void build(const A& points,int tamanho, IndexArray indices)
   {
     // busca o valor do ponto: _x<1>(points[1])
-    _indices = indices;
-    std::sort(_indices->begin(), _indices->end(),
+    _indices = IndexArray(tamanho);
+    for(int i=0; i < tamanho; i++)
+    {
+      _indices[i] = indices[i];
+    }
+    this->tamanho = tamanho;
+    std::sort(_indices.begin(), _indices.end(),
       [&points](int i1, int i2)
       {
         return _x<1>(points[i1]) < _x<1>(points[i2]);
@@ -56,9 +62,9 @@ public:
   size_t query(const A& points, const Bounds& bounds, PointFunc f) const
   { 
     for (int i = 0; i < tamanho; i++){
-      if (bounds.min() > _x<1>(points[_indices[i]])) {
+      if (bounds.min()[0] > _x<1>(points[_indices[i]])) {
         continue;
-      } else if (bounds.max() >= _x<1>(points[_indices[i]])) {
+      } else if (bounds.max()[0] >= _x<1>(points[_indices[i]])) {
         f(points, _indices[i]);
       } else {
         break;
@@ -67,19 +73,19 @@ public:
     return 0;
   }
 
-
-  void print_tree(int indent = 0) const
+  void print_tree(const A& points, int indent = 0) const
   {
-    std::cout << std::string(indent, ' ') << "[BST D=1] (Número de nós: " << (_indices ? _indices->size() : 0) << ")\n";
-    if (_indices)
+    std::cout << std::string(indent, ' ') << "═══════════════════════════════════════════\n";
+    std::cout << std::string(indent, ' ') << "  BST (Dimensão 1) - " << tamanho << " nós\n";
+    std::cout << std::string(indent, ' ') << "═══════════════════════════════════════════\n";
+    
+    /*for (int i = 0; i < tamanho; ++i)
     {
-      for (size_t i = 0; i < _indices->size(); ++i)
-      {
-        size_t idx = (*_indices)[i];
-        std::cout << std::string(indent + 2, ' ') << "├── Índice: " << idx 
-                  << " | Valor: " << _x<1>(points[idx]) << "\n";
-      }
-    }
+      size_t idx = _indices[i];
+      std::cout << std::string(indent, ' ') << "  " << i << ": ";
+      std::cout << "idx=" << idx << " | valor=" << _x<1>(points[idx]) << "\n";
+    }*/
+    std::cout << "\n";
   }
 
 private:
@@ -102,22 +108,22 @@ public:
 
   // função para contruir a arvore de dimenção D > 1, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
 
-  void build(const A& points,const IndexArray* indices,const int n)
+  void build(const A& points,const int n,const IndexArray indices = IndexArray{})
   {
     assert(!_root); // o assert vai garantir q a arvore seja construida apenas uma vez.
-    _indices = new IndexArray(n);
-    if(indices != nullptr && n > 0)
+    _indices = IndexArray(n);
+    if(indices.size() > 0 && n > 0)
     {
       for(int i = 0; i < n; i++)
       {
-        (*_indices)[i] = (*indices)[i];
+        _indices[i] = indices[i];
       }
     }else
     {
-      std::iota((*_indices).begin(), (*_indices).end(), 0); // preenche o vetor de indices ordenados com os indices dos pontos
+      std::iota(_indices.begin(), _indices.end(), 0); // preenche o vetor de indices ordenados com os indices dos pontos
     }
     
-    std::sort((*_indices).begin(), (*_indices).end(),
+    std::sort(_indices.begin(), _indices.end(),
       [&points](int i1, int i2)
       {
         return _x<D>(points[i1]) < _x<D>(points[i2]);
@@ -125,8 +131,6 @@ public:
     
     int i = n / 2;
     _root = build_recursivo(points, 0, n);
-
-    print_tree();
   }
 
   // função recursiva para construir a árvore, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
@@ -136,14 +140,14 @@ public:
     if(inicio >= fim) return static_cast<Node*>(nullptr);
 
     int meio = (inicio + fim) / 2;
-    Node* newNode = new Node(_x<D>(points[(*_indices)[meio]]), _x<D>(points[(*_indices)[inicio]]), _x<D>(points[(*_indices)[fim-1]]), meio, 0);
-    Calcula_Cout_Fist(*newNode, points, inicio, fim);
+    Node* newNode = new Node(_x<D>(points[_indices[meio]]), _x<D>(points[_indices[inicio]]), _x<D>(points[_indices[fim-1]]), meio, 0);
+    Calcula_Cout_Fist(newNode, points, inicio, fim);
 
     int tamanho_conjunto_canonic = fim - inicio;
     if(tamanho_conjunto_canonic > 0)
     {
       newNode->_assocTree = new AssociatedTree;
-      newNode->_assocTree->build(points, Gera_indises(inicio, fim, tamanho_conjunto_canonic), tamanho_conjunto_canonic);
+      newNode->_assocTree->build(points, tamanho_conjunto_canonic, Gera_indises(inicio, fim, tamanho_conjunto_canonic));
     }
 
     if(tamanho_conjunto_canonic > 1)
@@ -155,37 +159,37 @@ public:
     return newNode;
   }
 
-  IndexArray* Gera_indises(int inicio,int fim, int n)
+  IndexArray Gera_indises(int inicio,int fim, int n)
   {
-    IndexArray* indices = new IndexArray(n);
-    int k = 0;
-    for(int j=inicio; j < fim; j++)
+    IndexArray indices = IndexArray(n);
+    int j = 0;
+    for(int i=inicio; i < fim; i++)
     {
-      indices[k] = (*_indices)[j];
-      k++;
+      indices[j] = _indices[i];
+      j++;
     }
     return indices;
   }
 
   void Calcula_Cout_Fist(auto &node, const A& points,int inicio,int fim)
   {
-    int n = (inicio - fim) / 2;
-    for(int i=0; i < n;i++)
+    int meio = (inicio + fim) / 2;
+    for(int i=inicio; i < meio;i++)
     {
-      if(_x<D>(points[(*_indices)[i]]) == _root->Split_Value)
+      if(_x<D>(points[_indices[i]]) == node->Split_Value)
       {
-        if (i < node.fist) node.fist = i; // se pegar _root->fist - 1 vai poder somar o cout com o indice do ponto atual e vai dar o numero de pontos que tem a mesma coordenada D do valor de divisão
-        node.cout++;
-        node.antes++;
+        if (i < node->fist) node->fist = i; // se pegar node->fist - 1 vai poder somar o cout com o indice do ponto atual e vai dar o numero de pontos que tem a mesma coordenada D do valor de divisão
+        node->cout++;
+        node->antes++;
       }
     }
 
-    for(int i = n+1; i < fim;i++)
+    for(int i = meio+1; i < fim;i++)
     {
-      if(_x<D>(points[(*_indices)[i]]) == _root->Split_Value)
+      if(_x<D>(points[_indices[i]]) == node->Split_Value)
       {
-        node.cout++;
-        node.depois++;
+        node->cout++;
+        node->depois++;
       }
     }
   }
@@ -198,49 +202,84 @@ public:
   }
 
   // Função pública para disparar a impressão a partir da raiz
-  void print_tree(int indent = 0) const
+  void print_tree(const A& points, int indent = 0) const
   {
     if (!_root)
     {
-      std::cout << std::string(indent, ' ') << "[Árvore Vazia em D=" << D << "]\n";
+      std::cout << std::string(indent, ' ') << "[Árvore Vazia - Dimensão " << D << "]\n";
       return;
     }
-    std::cout << std::string(indent, ' ') << "=== ÁRVORE DIMENSÃO D = " << D << " ===\n";
-    print_recursivo(_root, indent);
+    
+    std::cout << "\n";
+    std::cout << std::string(indent, ' ') << "═══════════════════════════════════════════════════════════\n";
+    std::cout << std::string(indent, ' ') << "  RANGE TREE - DIMENSÃO " << D << "\n";
+    std::cout << std::string(indent, ' ') << "═══════════════════════════════════════════════════════════\n";
+    std::cout << "\n";
+    
+    print_recursivo(_root, indent, points, "");
+    std::cout << "\n";
   }
 
 private:
 
   // Função privada recursiva para desenhar a estrutura
-  void print_recursivo(auto node, int indent) const
+  void print_recursivo(auto node, int indent, const A& points, const std::string& prefix) const
   {
     if (!node) return;
-
-    // 1. Imprime o nó atual (Pivô e limites)
-    std::string espaco(indent, ' ');
-    std::cout << espaco << "├── [Nó] Pivô: " << node->Split_Value 
-              << " | Faixa: [" << node->Min_Valure << ", " << node->Max_Valure << "]\n";
-
-    // 2. Se houver árvore associada (dimensão D-1), imprime ela com recuo extra
+    
+    // Imprime o nó atual
+    std::cout << prefix;
+    std::cout << "├─ Nó [D=" << D << "] ";
+    std::cout << "pivô=" << node->Split_Value;
+    std::cout << " | faixa=[" << node->Min_Valure << ", " << node->Max_Valure << "]";
+    std::cout << " | count=" << node->cout;
+    if (node->antes > 0 || node->depois > 0) {
+      std::cout << " (←" << node->antes << "/→" << node->depois << ")";
+    }
+    std::cout << "\n";
+    
+    // Se houver árvore associada, mostra de forma compacta
     if (node->_assocTree)
     {
-      std::cout << espaco << "│   └── Membros Associados (D=" << D-1 << "):\n";
-      node->_assocTree->print_tree(indent + 8); // Entra na subárvore com mais recuo
+      std::string new_prefix = prefix + "│   ";
+      std::cout << prefix << "│   └─ Sub-árvore DIM=" << (D-1) << ":\n";
+      
+      // Salva o buffer atual
+      std::stringstream buffer;
+      auto old_buffer = std::cout.rdbuf(buffer.rdbuf());
+      node->_assocTree->print_tree(points, indent + 4);
+      std::cout.rdbuf(old_buffer);
+      
+      // Imprime cada linha com o prefixo adequado
+      std::string line;
+      while (std::getline(buffer, line)) {
+        if (!line.empty()) {
+          std::cout << prefix << "│     " << line << "\n";
+        }
+      }
     }
-
-    // 3. Imprime os filhos esquerdo e direito recursivamente
-    if (node->_childL)
+    
+    // Processa os filhos
+    if (node->_childL || node->_childR)
     {
-      std::cout << espaco << "│   ├── Esquerda:\n";
-      print_recursivo(node->_childL, indent + 4);
-    }
-    if (node->_childR)
-    {
-      std::cout << espaco << "│   └── Direita:\n";
-      print_recursivo(node->_childR, indent + 4);
+      if (node->_childL)
+      {
+        std::string new_prefix = prefix + "│   ";
+        std::cout << prefix << "├─ Esquerda (x < " << node->Split_Value << "):\n";
+        print_recursivo(node->_childL, indent + 2, points, new_prefix);
+      }
+      
+      if (node->_childR)
+      {
+        std::string new_prefix = prefix + "│   ";
+        if (!node->_childL) std::cout << prefix << "├─";
+        else std::cout << prefix << "└─";
+        std::cout << "Direita (x ≥ " << node->Split_Value << "):\n";
+        print_recursivo(node->_childR, indent + 2, points, new_prefix);
+      }
     }
   }
-
+  
   using real = typename P::value_type;
   using AssociatedTree = BBST<D - 1, P, A>;
 
@@ -253,9 +292,9 @@ private:
     ou se vao conter copias das listar com os indices ordenados que esta no _root
     */
     // insert your code here
-    real Split_Value;
-    real Min_Valure;
-    real Max_Valure;
+    float Split_Value;
+    float Min_Valure;
+    float Max_Valure;
     int fist;
     int cout;
 
@@ -267,7 +306,7 @@ private:
     AssociatedTree* _assocTree{};
     // IndexArray* Conjunto_Cano;
 
-    Node(real Split_Value, real Min_Valure, real Max_Valure, int fist, int cout):
+    Node(float Split_Value, float Min_Valure, float Max_Valure, int fist, int cout):
       Split_Value{Split_Value},
       Min_Valure{Min_Valure},
       Max_Valure{Max_Valure},
@@ -285,7 +324,7 @@ private:
   }; // Node
 
   Node* _root{};
-  IndexArray* _indices;
+  IndexArray _indices;
 
 }; // BBST
 
@@ -313,7 +352,12 @@ public:
 
   void build()
   {
-    _mainTree.build(_points, nullptr, _points.size());
+    _mainTree.build(_points, _points.size());
+  }
+
+  void print() const
+  {
+    _mainTree.print_tree(_points);
   }
 
   auto query(const Bounds& bounds, PointFunc f) const
