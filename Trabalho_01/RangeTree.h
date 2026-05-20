@@ -41,7 +41,7 @@ public:
   using PointFunc = rtree::PointFunc<A>;
 
   // função expecializada para construir a árvore de dimensão D = 1, onde cada nó da árvore contém um índice para o ponto correspondente
-  void build(const A& points,const IndexArray* indices,const int n)
+  void build(const A& points)
   {
     // insert your code here
   }
@@ -52,7 +52,7 @@ public:
     // insert your code here
     return 0;
   }
-  
+
   void print_tree(int indent = 0) const
   {
     std::cout << std::string(indent, ' ') << "[BST D=1] (Número de nós: " << (_indices ? _indices->size() : 0) << ")\n";
