@@ -73,21 +73,6 @@ public:
     return 0;
   }
 
-  void print_tree(const A& points, int indent = 0) const
-  {
-    std::cout << std::string(indent, ' ') << "═══════════════════════════════════════════\n";
-    std::cout << std::string(indent, ' ') << "  BST (Dimensão 1) - " << tamanho << " nós\n";
-    std::cout << std::string(indent, ' ') << "═══════════════════════════════════════════\n";
-    
-    /*for (int i = 0; i < tamanho; ++i)
-    {
-      size_t idx = _indices[i];
-      std::cout << std::string(indent, ' ') << "  " << i << ": ";
-      std::cout << "idx=" << idx << " | valor=" << _x<1>(points[idx]) << "\n";
-    }*/
-    std::cout << "\n";
-  }
-
 private:
   IndexArray _indices;
   int tamanho;
@@ -201,85 +186,7 @@ public:
     return 0;
   }
 
-  // Função pública para disparar a impressão a partir da raiz
-  void print_tree(const A& points, int indent = 0) const
-  {
-    if (!_root)
-    {
-      std::cout << std::string(indent, ' ') << "[Árvore Vazia - Dimensão " << D << "]\n";
-      return;
-    }
-    
-    std::cout << "\n";
-    std::cout << std::string(indent, ' ') << "═══════════════════════════════════════════════════════════\n";
-    std::cout << std::string(indent, ' ') << "  RANGE TREE - DIMENSÃO " << D << "\n";
-    std::cout << std::string(indent, ' ') << "═══════════════════════════════════════════════════════════\n";
-    std::cout << "\n";
-    
-    print_recursivo(_root, indent, points, "");
-    std::cout << "\n";
-  }
-
 private:
-
-  // Função privada recursiva para desenhar a estrutura
-  void print_recursivo(auto node, int indent, const A& points, const std::string& prefix) const
-  {
-    if (!node) return;
-    
-    // Imprime o nó atual
-    std::cout << prefix;
-    std::cout << "├─ Nó [D=" << D << "] ";
-    std::cout << "pivô=" << node->Split_Value;
-    std::cout << " | faixa=[" << node->Min_Valure << ", " << node->Max_Valure << "]";
-    std::cout << " | count=" << node->cout;
-    if (node->antes > 0 || node->depois > 0) {
-      std::cout << " (←" << node->antes << "/→" << node->depois << ")";
-    }
-    std::cout << "\n";
-    
-    // Se houver árvore associada, mostra de forma compacta
-    if (node->_assocTree)
-    {
-      std::string new_prefix = prefix + "│   ";
-      std::cout << prefix << "│   └─ Sub-árvore DIM=" << (D-1) << ":\n";
-      
-      // Salva o buffer atual
-      std::stringstream buffer;
-      auto old_buffer = std::cout.rdbuf(buffer.rdbuf());
-      node->_assocTree->print_tree(points, indent + 4);
-      std::cout.rdbuf(old_buffer);
-      
-      // Imprime cada linha com o prefixo adequado
-      std::string line;
-      while (std::getline(buffer, line)) {
-        if (!line.empty()) {
-          std::cout << prefix << "│     " << line << "\n";
-        }
-      }
-    }
-    
-    // Processa os filhos
-    if (node->_childL || node->_childR)
-    {
-      if (node->_childL)
-      {
-        std::string new_prefix = prefix + "│   ";
-        std::cout << prefix << "├─ Esquerda (x < " << node->Split_Value << "):\n";
-        print_recursivo(node->_childL, indent + 2, points, new_prefix);
-      }
-      
-      if (node->_childR)
-      {
-        std::string new_prefix = prefix + "│   ";
-        if (!node->_childL) std::cout << prefix << "├─";
-        else std::cout << prefix << "└─";
-        std::cout << "Direita (x ≥ " << node->Split_Value << "):\n";
-        print_recursivo(node->_childR, indent + 2, points, new_prefix);
-      }
-    }
-  }
-  
   using real = typename P::value_type;
   using AssociatedTree = BBST<D - 1, P, A>;
 
@@ -353,11 +260,6 @@ public:
   void build()
   {
     _mainTree.build(_points, _points.size());
-  }
-
-  void print() const
-  {
-    _mainTree.print_tree(_points);
   }
 
   auto query(const Bounds& bounds, PointFunc f) const
