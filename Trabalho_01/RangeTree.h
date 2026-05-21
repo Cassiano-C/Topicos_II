@@ -60,7 +60,7 @@ public:
  
   // função de busca para percorrer a árvore e encontrar os pontos que vão ser enviados à função f
   size_t query(const A& points, const Bounds& bounds, PointFunc f) const
-  {
+  { 
     size_t pontos_encontrados = 0;
     for (int i = 0; i < tamanho; i++){
       if (bounds.min()[0] > _x<1>(points[_indices[i]])) {
@@ -115,8 +115,7 @@ public:
       {
         return _x<D>(points[i1]) < _x<D>(points[i2]);
       });
-    
-    int i = n / 2;
+
     _root = build_recursivo(points, 0, n);
   }
 
@@ -127,7 +126,7 @@ public:
     if(inicio >= fim) return static_cast<Node*>(nullptr);
 
     int meio = (inicio + fim) / 2;
-    Node* newNode = new Node(_x<D>(points[_indices[meio]]), _x<D>(points[_indices[inicio]]), _x<D>(points[_indices[fim-1]]), meio, 0);
+    Node* newNode = new Node(_x<D>(points[_indices[meio]]), _x<D>(points[_indices[inicio]]), _x<D>(points[_indices[fim-1]]), meio);
     Calcula_Cout_Fist(newNode, points, inicio, fim);
 
     int tamanho_conjunto_canonic = fim - inicio;
@@ -161,24 +160,17 @@ public:
   void Calcula_Cout_Fist(auto &node, const A& points,int inicio,int fim)
   {
     int meio = (inicio + fim) / 2;
-    for(int i=inicio; i < meio;i++)
-    {
-      if(_x<D>(points[_indices[i]]) == node->Split_Value)
-      {
-        if (i < node->fist) node->fist = i; // se pegar node->fist - 1 vai poder somar o cout com o indice do ponto atual e vai dar o numero de pontos que tem a mesma coordenada D do valor de divisão
-        node->cout++;
-        node->antes++;
-      }
-    }
 
-    for(int i = meio+1; i < fim;i++)
+    for(int i = meio-1;i >= inicio && _x<D>(points[_indices[i]]) == node->Split_Value;i--)
     {
-      if(_x<D>(points[_indices[i]]) == node->Split_Value)
-      {
-        node->cout++;
-        node->depois++;
-      }
+      node->antes++;
+      node->fist = i;
     }
+    for(int i = meio+1;i < fim && _x<D>(points[_indices[i]]) == node->Split_Value;i++)
+    {
+      node->depois++;
+    }
+    node->cout += node->antes + node->depois;
   }
 
   size_t query(const A& points, const Bounds& bounds, PointFunc f) const
@@ -200,35 +192,37 @@ private:
     if (node->Min_Valure >= bounds.min()[D-1] && node->Max_Valure <= bounds.max()[D-1])
     {
       // Dispara a busca na próxima dimensão (D-1)
-      return pontos_encontrados += node->_assocTree->query(points, bounds, f);
+      pontos_encontrados += node->_assocTree->query(points, bounds, f);
     }
-
-    // Caso 2: O valor de split corta a faixa informada
-    if (node->Split_Value >= bounds.min()[D-1] && node->Split_Value <= bounds.max()[D-1]) {
-      for (int _valores = node->fist; _valores < node->fist + node->cout; _valores++) {
-        bool ponto_valido = true;
-        
-        for (int _dim = D - 1; _dim >= 1; _dim--) {
-          real value = points[_indices[_valores]][_dim - 1]; 
-          if (value < bounds.min()[_dim-1] || value > bounds.max()[_dim-1]) {
-            ponto_valido = false;
-            break;
+    else
+    {
+      // Caso 2: O valor de split corta a faixa informada
+      if (node->Split_Value >= bounds.min()[D-1] && node->Split_Value <= bounds.max()[D-1]) {
+        for (int _valores = node->fist; _valores < node->fist + node->cout; _valores++) {
+          bool ponto_valido = true;
+          
+          for (int _dim = D - 1; _dim >= 1; _dim--) {
+            real value = points[_indices[_valores]][_dim - 1]; 
+            if (value < bounds.min()[_dim-1] || value > bounds.max()[_dim-1]) {
+              ponto_valido = false;
+              break;
+            }
+          }
+          
+          if (ponto_valido) {
+            f(points, _indices[_valores]);
+            pontos_encontrados++; // Encontrou um ponto válido aqui!
           }
         }
-        
-        if (ponto_valido) {
-          f(points, _indices[_valores]);
-          pontos_encontrados++; // Encontrou um ponto válido aqui!
-        }
       }
-    }
 
-    // Caso 3: Desce recursivamente para os filhos esquerdo e direito
-    if (node->_childL != nullptr && node->Split_Value > bounds.min()[D-1]) {
-      pontos_encontrados += query_recursivo(points, bounds, f, node->_childL);
-    }
-    if (node->_childR != nullptr && node->Split_Value < bounds.max()[D-1]) {
-      pontos_encontrados += query_recursivo(points, bounds, f, node->_childR);
+      // Caso 3: Desce recursivamente para os filhos esquerdo e direito
+      if (node->_childL != nullptr && node->Split_Value > bounds.min()[D-1]) {
+        pontos_encontrados += query_recursivo(points, bounds, f, node->_childL);
+      }
+      if (node->_childR != nullptr && node->Split_Value < bounds.max()[D-1]) {
+        pontos_encontrados += query_recursivo(points, bounds, f, node->_childR);
+      }
     }
 
     return pontos_encontrados;
@@ -247,9 +241,9 @@ private:
     ou se vao conter copias das listar com os indices ordenados que esta no _root
     */
     // insert your code here
-    float Split_Value;
-    float Min_Valure;
-    float Max_Valure;
+    real Split_Value;
+    real Min_Valure;
+    real Max_Valure;
     int fist;
     int cout;
 
@@ -261,12 +255,12 @@ private:
     AssociatedTree* _assocTree{};
     // IndexArray* Conjunto_Cano;
 
-    Node(float Split_Value, float Min_Valure, float Max_Valure, int fist, int cout):
+    Node(real Split_Value, real Min_Valure, real Max_Valure, int fist):
       Split_Value{Split_Value},
       Min_Valure{Min_Valure},
       Max_Valure{Max_Valure},
       fist{fist},
-      cout{cout},
+      cout{1},
       antes{0},
       depois{0},
       _childL{nullptr},
