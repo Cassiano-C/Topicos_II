@@ -207,7 +207,16 @@ public:
   {
     int meio = (inicio + fim) / 2;
 
-    for(int i = meio; )
+    for(int i = meio;i >= inicio && _x<D>(points[_indices[i]]) == node->Split_Value;i--)
+    {
+      node->antes++;
+      node->fist = i;
+    }
+    for(int i = meio + 1;i < fim && _x<D>(points[_indices[i]]) == node->Split_Value;i++)
+    {
+      node->depois++;
+    }
+    node->cout = node->antes + node->depois;
   }
 
   // Função pública para disparar a impressão a partir da raiz
