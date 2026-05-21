@@ -6,7 +6,10 @@ Para poder compilar vai ate a pasta do trabalho e use esse comando:
 ```bash
 g++ -I. *.cpp -o main
 ```
-
+Para compilar e gerar a imagen da arvore;
+```bash
+g++ -I. *.cpp -o main && ./main && dot -Tpng range_tree.dot -o arvore.png  
+```
 ## Primeiro Trabalho
 Vai ser contruir uma RTree com as coordenadas.
 

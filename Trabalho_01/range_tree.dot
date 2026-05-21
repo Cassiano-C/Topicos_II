@@ -1,0 +1,240 @@
+digraph G {
+  rankdir=TB;
+  node [shape=box, fontname="Arial"];
+  node_0 [label="Split: 2\nFaixa: [0.5, 4.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_0 {
+    label = "Sub-árvore Associada D=3";
+    color = gray;
+    style = dashed;
+  node_1 [label="Split: 2\nFaixa: [0.5, 4.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_1 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_3 [label="Idx: 0", style=filled, fillcolor="#fff9c4"];
+    node_1 -> node_d1_3 [style=dotted, color=purple, label="vetor D=1"];
+  node_d1_4 [label="Idx: 1", style=filled, fillcolor="#fff9c4"];
+  node_d1_3 -> node_d1_4;
+  node_d1_5 [label="Idx: 6", style=filled, fillcolor="#fff9c4"];
+  node_d1_4 -> node_d1_5;
+  node_d1_6 [label="Idx: 3", style=filled, fillcolor="#fff9c4"];
+  node_d1_5 -> node_d1_6;
+  node_d1_7 [label="Idx: 10", style=filled, fillcolor="#fff9c4"];
+  node_d1_6 -> node_d1_7;
+  node_d1_8 [label="Idx: 8", style=filled, fillcolor="#fff9c4"];
+  node_d1_7 -> node_d1_8;
+  node_d1_9 [label="Idx: 4", style=filled, fillcolor="#fff9c4"];
+  node_d1_8 -> node_d1_9;
+  node_d1_10 [label="Idx: 9", style=filled, fillcolor="#fff9c4"];
+  node_d1_9 -> node_d1_10;
+  node_d1_11 [label="Idx: 11", style=filled, fillcolor="#fff9c4"];
+  node_d1_10 -> node_d1_11;
+  node_d1_12 [label="Idx: 5", style=filled, fillcolor="#fff9c4"];
+  node_d1_11 -> node_d1_12;
+  node_d1_13 [label="Idx: 7", style=filled, fillcolor="#fff9c4"];
+  node_d1_12 -> node_d1_13;
+  node_d1_14 [label="Idx: 2", style=filled, fillcolor="#fff9c4"];
+  node_d1_13 -> node_d1_14;
+  }
+  node_1 -> node_15 [label="L"];
+  node_15 [label="Split: 1\nFaixa: [0.5, 1.2]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_15 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_17 [label="Idx: 0", style=filled, fillcolor="#fff9c4"];
+    node_15 -> node_d1_17 [style=dotted, color=purple, label="vetor D=1"];
+  node_d1_18 [label="Idx: 6", style=filled, fillcolor="#fff9c4"];
+  node_d1_17 -> node_d1_18;
+  node_d1_19 [label="Idx: 8", style=filled, fillcolor="#fff9c4"];
+  node_d1_18 -> node_d1_19;
+  }
+  node_15 -> node_20 [label="R"];
+  node_20 [label="Split: 1.2\nFaixa: [1.2, 1.2]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_20 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_22 [label="Idx: 8", style=filled, fillcolor="#fff9c4"];
+    node_20 -> node_d1_22 [style=dotted, color=purple, label="vetor D=1"];
+  }
+  node_1 -> node_23 [label="R"];
+  node_23 [label="Split: 3\nFaixa: [2.5, 4.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_23 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_25 [label="Idx: 9", style=filled, fillcolor="#fff9c4"];
+    node_23 -> node_d1_25 [style=dotted, color=purple, label="vetor D=1"];
+  node_d1_26 [label="Idx: 5", style=filled, fillcolor="#fff9c4"];
+  node_d1_25 -> node_d1_26;
+  node_d1_27 [label="Idx: 7", style=filled, fillcolor="#fff9c4"];
+  node_d1_26 -> node_d1_27;
+  node_d1_28 [label="Idx: 2", style=filled, fillcolor="#fff9c4"];
+  node_d1_27 -> node_d1_28;
+  }
+  node_23 -> node_29 [label="L"];
+  node_29 [label="Split: 2.5\nFaixa: [2.5, 2.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_29 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_31 [label="Idx: 5", style=filled, fillcolor="#fff9c4"];
+    node_29 -> node_d1_31 [style=dotted, color=purple, label="vetor D=1"];
+  }
+  node_23 -> node_32 [label="R"];
+  node_32 [label="Split: 4.5\nFaixa: [4.5, 4.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_32 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_34 [label="Idx: 2", style=filled, fillcolor="#fff9c4"];
+    node_32 -> node_d1_34 [style=dotted, color=purple, label="vetor D=1"];
+  }
+    node_0 -> node_1 [style=dotted, color=blue];
+  }
+  node_0 -> node_35 [label="L"];
+  node_35 [label="Split: 1.1\nFaixa: [0.5, 1.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_35 {
+    label = "Sub-árvore Associada D=3";
+    color = gray;
+    style = dashed;
+  node_36 [label="Split: 1.5\nFaixa: [0.5, 2.9]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_36 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_38 [label="Idx: 0", style=filled, fillcolor="#fff9c4"];
+    node_36 -> node_d1_38 [style=dotted, color=purple, label="vetor D=1"];
+  node_d1_39 [label="Idx: 6", style=filled, fillcolor="#fff9c4"];
+  node_d1_38 -> node_d1_39;
+  node_d1_40 [label="Idx: 3", style=filled, fillcolor="#fff9c4"];
+  node_d1_39 -> node_d1_40;
+  node_d1_41 [label="Idx: 9", style=filled, fillcolor="#fff9c4"];
+  node_d1_40 -> node_d1_41;
+  }
+  node_36 -> node_42 [label="L"];
+  node_42 [label="Split: 0.5\nFaixa: [0.5, 0.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_42 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_44 [label="Idx: 0", style=filled, fillcolor="#fff9c4"];
+    node_42 -> node_d1_44 [style=dotted, color=purple, label="vetor D=1"];
+  }
+  node_36 -> node_45 [label="R"];
+  node_45 [label="Split: 2.9\nFaixa: [2.9, 2.9]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_45 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_47 [label="Idx: 9", style=filled, fillcolor="#fff9c4"];
+    node_45 -> node_d1_47 [style=dotted, color=purple, label="vetor D=1"];
+  }
+    node_35 -> node_36 [style=dotted, color=blue];
+  }
+  node_35 -> node_48 [label="L"];
+  node_48 [label="Split: 0.5\nFaixa: [0.5, 0.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_48 {
+    label = "Sub-árvore Associada D=3";
+    color = gray;
+    style = dashed;
+  node_49 [label="Split: 0.5\nFaixa: [0.5, 0.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_49 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_51 [label="Idx: 0", style=filled, fillcolor="#fff9c4"];
+    node_49 -> node_d1_51 [style=dotted, color=purple, label="vetor D=1"];
+  }
+    node_48 -> node_49 [style=dotted, color=blue];
+  }
+  node_35 -> node_52 [label="R"];
+  node_52 [label="Split: 1.5\nFaixa: [1.5, 1.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_52 {
+    label = "Sub-árvore Associada D=3";
+    color = gray;
+    style = dashed;
+  node_53 [label="Split: 1.5\nFaixa: [1.5, 1.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_53 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_55 [label="Idx: 3", style=filled, fillcolor="#fff9c4"];
+    node_53 -> node_d1_55 [style=dotted, color=purple, label="vetor D=1"];
+  }
+    node_52 -> node_53 [style=dotted, color=blue];
+  }
+  node_0 -> node_56 [label="R"];
+  node_56 [label="Split: 3\nFaixa: [2.5, 4.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_56 {
+    label = "Sub-árvore Associada D=3";
+    color = gray;
+    style = dashed;
+  node_57 [label="Split: 3\nFaixa: [1.2, 4.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_57 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_59 [label="Idx: 8", style=filled, fillcolor="#fff9c4"];
+    node_57 -> node_d1_59 [style=dotted, color=purple, label="vetor D=1"];
+  node_d1_60 [label="Idx: 5", style=filled, fillcolor="#fff9c4"];
+  node_d1_59 -> node_d1_60;
+  node_d1_61 [label="Idx: 7", style=filled, fillcolor="#fff9c4"];
+  node_d1_60 -> node_d1_61;
+  node_d1_62 [label="Idx: 2", style=filled, fillcolor="#fff9c4"];
+  node_d1_61 -> node_d1_62;
+  }
+  node_57 -> node_63 [label="L"];
+  node_63 [label="Split: 1.2\nFaixa: [1.2, 1.2]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_63 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_65 [label="Idx: 8", style=filled, fillcolor="#fff9c4"];
+    node_63 -> node_d1_65 [style=dotted, color=purple, label="vetor D=1"];
+  }
+  node_57 -> node_66 [label="R"];
+  node_66 [label="Split: 4.5\nFaixa: [4.5, 4.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_66 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_68 [label="Idx: 2", style=filled, fillcolor="#fff9c4"];
+    node_66 -> node_d1_68 [style=dotted, color=purple, label="vetor D=1"];
+  }
+    node_56 -> node_57 [style=dotted, color=blue];
+  }
+  node_56 -> node_69 [label="L"];
+  node_69 [label="Split: 2.5\nFaixa: [2.5, 2.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_69 {
+    label = "Sub-árvore Associada D=3";
+    color = gray;
+    style = dashed;
+  node_70 [label="Split: 2.5\nFaixa: [2.5, 2.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_70 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_72 [label="Idx: 5", style=filled, fillcolor="#fff9c4"];
+    node_70 -> node_d1_72 [style=dotted, color=purple, label="vetor D=1"];
+  }
+    node_69 -> node_70 [style=dotted, color=blue];
+  }
+  node_56 -> node_73 [label="R"];
+  node_73 [label="Split: 4.5\nFaixa: [4.5, 4.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_73 {
+    label = "Sub-árvore Associada D=3";
+    color = gray;
+    style = dashed;
+  node_74 [label="Split: 4.5\nFaixa: [4.5, 4.5]", style=filled, fillcolor="#e1f5fe"];
+  subgraph cluster_node_74 {
+    label = "Sub-árvore Associada D=2";
+    color = gray;
+    style = dashed;
+  node_d1_76 [label="Idx: 2", style=filled, fillcolor="#fff9c4"];
+    node_74 -> node_d1_76 [style=dotted, color=purple, label="vetor D=1"];
+  }
+    node_73 -> node_74 [style=dotted, color=blue];
+  }
+}
