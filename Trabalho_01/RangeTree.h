@@ -60,17 +60,19 @@ public:
  
   // função de busca para percorrer a árvore e encontrar os pontos que vão ser enviados à função f
   size_t query(const A& points, const Bounds& bounds, PointFunc f) const
-  { 
+  {
+    size_t pontos_encontrados = 0;
     for (int i = 0; i < tamanho; i++){
       if (bounds.min()[0] > _x<1>(points[_indices[i]])) {
         continue;
       } else if (bounds.max()[0] >= _x<1>(points[_indices[i]])) {
         f(points, _indices[i]);
+        pontos_encontrados++;
       } else {
         break;
       }
     }
-    return 0;
+    return pontos_encontrados;
   }
 
 private:
@@ -179,46 +181,60 @@ public:
     }
   }
 
-  // Funçao de busca para percorere a arvore e encontar os pontos que vao ser enviados a funçao f
-  size_t query(const A& points, const Bounds& bounds, PointFunc f, auto node) const
+  size_t query(const A& points, const Bounds& bounds, PointFunc f) const
   {
-    if(node == NULL){node=_root;}
-    //1
-    if(node->Min_Valure >= bounds.min()[D-1] && node->Max_Valure <= bounds.max()[D-1])
-    {   
-      return node->_assocTree->query(points, bounds, f,node->_assocTree->_root);
-    }
-    //2
-    if(node->Split_Value >= bounds.min()[D-1] && node->Split_Value <= bounds.max()[D-1]){
-      //Para cada _valores no conjunto nodal de node
-      for(int _valores = node->fist; _valores < node->fist + node->cout; _valores++){
-        //Para cada Dimensão de _valores
-        for(int _dim = D-1; _dim >= 1; _dim--){
-          using value = _x<_dim>(points[_indices[_valores]]);
-          //Verifica se o valor de _dim esta no bounds
-          if(value >= bounds.min()[_dim-1] && value <= bounds.max()[_dim-1]){
-            if(_dim == 1)
-            {
-              f(points,_indices[_valores]);
-            }
-            else{continue;}
-          }
-          else{break;}
-        }
-      }
-    }
-    //3
-    if(node->_childL && node->Split_Value > bounds.min()[D-1]){
-      query(points,bounds, f, node->_childL);
-    }
-    if(node->_childR && node->Split_Value < bounds.max()[D-1]){
-      query(points,bounds, f, node->_childR);
-    }
-
-    return 0;
+    if (!_root) return 0;
+    return query_recursivo(points, bounds, f, _root);
   }
 
 private:
+
+  // 2. Função interna que faz o trabalho recursivo real
+  size_t query_recursivo(const A& points, const Bounds& bounds, PointFunc f, auto* node) const
+  {
+    if (!node) return 0;
+
+    size_t pontos_encontrados = 0;
+
+    // Caso 1: Nó está totalmente contido na faixa desta dimensão
+    if (node->Min_Valure >= bounds.min()[D-1] && node->Max_Valure <= bounds.max()[D-1])
+    {
+      // Dispara a busca na próxima dimensão (D-1)
+      return pontos_encontrados += node->_assocTree->query(points, bounds, f);
+    }
+
+    // Caso 2: O valor de split corta a faixa informada
+    if (node->Split_Value >= bounds.min()[D-1] && node->Split_Value <= bounds.max()[D-1]) {
+      for (int _valores = node->fist; _valores < node->fist + node->cout; _valores++) {
+        bool ponto_valido = true;
+        
+        for (int _dim = D - 1; _dim >= 1; _dim--) {
+          real value = points[_indices[_valores]][_dim - 1]; 
+          if (value < bounds.min()[_dim-1] || value > bounds.max()[_dim-1]) {
+            ponto_valido = false;
+            break;
+          }
+        }
+        
+        if (ponto_valido) {
+          f(points, _indices[_valores]);
+          pontos_encontrados++; // Encontrou um ponto válido aqui!
+        }
+      }
+    }
+
+    // Caso 3: Desce recursivamente para os filhos esquerdo e direito
+    if (node->_childL != nullptr && node->Split_Value > bounds.min()[D-1]) {
+      pontos_encontrados += query_recursivo(points, bounds, f, node->_childL);
+    }
+    if (node->_childR != nullptr && node->Split_Value < bounds.max()[D-1]) {
+      pontos_encontrados += query_recursivo(points, bounds, f, node->_childR);
+    }
+
+    return pontos_encontrados;
+  }
+
+
   using real = typename P::value_type;
   using AssociatedTree = BBST<D - 1, P, A>;
 
@@ -296,11 +312,8 @@ public:
 
   auto query(const Bounds& bounds, PointFunc f) const
   {
-    return _mainTree.query(_points, bounds, f, NULL);
+    return _mainTree.query(_points, bounds, f);
   }
-
-
-
 
 private:
   const A& _points;

@@ -63,17 +63,19 @@ public:
   }
 
   size_t query(const A& points, const Bounds& bounds, PointFunc f) const
-  { 
+  {
+    size_t pontos_encontrados = 0;
     for (int i = 0; i < tamanho; i++){
       if (bounds.min()[0] > _x<1>(points[_indices[i]])) {
         continue;
       } else if (bounds.max()[0] >= _x<1>(points[_indices[i]])) {
         f(points, _indices[i]);
+        pontos_encontrados++;
       } else {
         break;
       }
     }
-    return 0;
+    return pontos_encontrados;
   }
 
   void print_tree(const A& points, int indent = 0) const
@@ -167,7 +169,6 @@ public:
   // função recursiva para construir a árvore, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
   auto* build_recursivo(const A& points, int inicio,int fim)
   {
-
     if(inicio >= fim) return static_cast<Node*>(nullptr);
 
     int meio = (inicio + fim) / 2;
@@ -205,31 +206,8 @@ public:
   void Calcula_Cout_Fist(auto &node, const A& points,int inicio,int fim)
   {
     int meio = (inicio + fim) / 2;
-    for(int i=inicio; i < meio;i++)
-    {
-      if(_x<D>(points[_indices[i]]) == node->Split_Value)
-      {
-        if (i < node->fist) node->fist = i; // se pegar node->fist - 1 vai poder somar o cout com o indice do ponto atual e vai dar o numero de pontos que tem a mesma coordenada D do valor de divisão
-        node->cout++;
-        node->antes++;
-      }
-    }
 
-    for(int i = meio+1; i < fim;i++)
-    {
-      if(_x<D>(points[_indices[i]]) == node->Split_Value)
-      {
-        node->cout++;
-        node->depois++;
-      }
-    }
-  }
-
-  // Funçao de busca para percorere a arvore e encontar os pontos que vao ser enviados a funçao f
-  size_t query(const A& points, const Bounds& bounds, PointFunc f) const
-  {
-    // insert your code here
-    return 0;
+    for(int i = meio; )
   }
 
   // Função pública para disparar a impressão a partir da raiz
@@ -360,7 +338,62 @@ public:
 
   Node *_root{};
 
+  size_t query(const A& points, const Bounds& bounds, PointFunc f) const
+  {
+    if (!_root) return 0;
+    return query_recursivo(points, bounds, f, _root);
+  }
+
 private:
+
+  // 2. Função interna que faz o trabalho recursivo real
+  size_t query_recursivo(const A& points, const Bounds& bounds, PointFunc f, auto* node) const
+  {
+    if (!node) return 0;
+
+    size_t pontos_encontrados = 0;
+
+    // Caso 1: Nó está totalmente contido na faixa desta dimensão
+    if (node->Min_Valure >= bounds.min()[D-1] && node->Max_Valure <= bounds.max()[D-1])
+    {
+      // Dispara a busca na próxima dimensão (D-1)
+      pontos_encontrados += node->_assocTree->query(points, bounds, f);
+    }
+    else
+    {
+      // Caso 2: O valor de split corta a faixa informada
+      if (node->Split_Value >= bounds.min()[D-1] && node->Split_Value <= bounds.max()[D-1]) {
+
+    }
+      for (int _valores = node->fist; _valores < node->fist + node->cout; _valores++) {
+        bool ponto_valido = true;
+        
+        for (int _dim = D - 1; _dim >= 1; _dim--) {
+          real value = points[_indices[_valores]][_dim - 1];
+          if (value < bounds.min()[_dim-1] || value > bounds.max()[_dim-1]) {
+            ponto_valido = false;
+            break;
+          }
+        }
+        
+        if (ponto_valido) {
+          f(points, _indices[_valores]);
+          pontos_encontrados++; // Encontrou um ponto válido aqui!
+        }
+      }
+
+      // Caso 3: Desce recursivamente para os filhos esquerdo e direito
+      if (node->_childL && node->Split_Value > bounds.min()[D-1]) {
+        pontos_encontrados += query_recursivo(points, bounds, f, node->_childL);
+      }
+      if (node->_childR && node->Split_Value < bounds.max()[D-1]) {
+        pontos_encontrados += query_recursivo(points, bounds, f, node->_childR);
+      }
+    }
+
+
+    return pontos_encontrados;
+  }
 
   // Função privada recursiva para desenhar a estrutura
   void print_recursivo(auto node, int indent, const A& points, const std::string& prefix) const
