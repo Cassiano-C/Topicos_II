@@ -49,7 +49,7 @@ void queryTest(const PointArray& points, const Bounds& bounds)
 
 int main(int argc, char** argv)
 {
-   size_t np{200};
+  size_t np{200};
   cg::Bounds3f bounds;
 
   bounds.inflate({0, 0, 0});
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 
   bounds.setEmpty();
   bounds.inflate({5, 5, 5});
-  bounds.inflate({75, 75, 75});
+  bounds.inflate({35, 35, 35});
   puts("**Naive query");
   queryTest(points, bounds);
   RangeTree rt{points};

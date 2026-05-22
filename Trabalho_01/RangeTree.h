@@ -94,7 +94,6 @@ public:
   }
 
   // função para contruir a arvore de dimenção D > 1, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
-
   void build(const A& points,const int n,const IndexArray indices = IndexArray{})
   {
     assert(!_root); // o assert vai garantir q a arvore seja construida apenas uma vez.
@@ -135,7 +134,7 @@ private:
 
     int meio = (inicio + fim) / 2;
     Node* newNode = new Node(_x<D>(points[_indices[meio]]), _x<D>(points[_indices[inicio]]), _x<D>(points[_indices[fim-1]]), meio);
-    Calcula_Cout_Fist(newNode, points, inicio, fim);
+    Calcula_Count_First(newNode, points, inicio, fim);
 
     int tamanho_conjunto_canonic = fim - inicio;
     if(tamanho_conjunto_canonic > 0)
@@ -165,20 +164,20 @@ private:
     return indices;
   }
 
-  void Calcula_Cout_Fist(auto &node, const A& points,int inicio,int fim)
+  void Calcula_Count_First(auto &node, const A& points,int inicio,int fim)
   {
     int meio = (inicio + fim) / 2;
 
     for(int i = meio-1;i >= inicio && _x<D>(points[_indices[i]]) == node->Split_Value;i--)
     {
       node->antes++;
-      node->fist = i;
+      node->first = i;
     }
     for(int i = meio+1;i < fim && _x<D>(points[_indices[i]]) == node->Split_Value;i++)
     {
       node->depois++;
     }
-    node->cout += node->antes + node->depois;
+    node->count += node->antes + node->depois;
   }
 
   // 2. Função interna que faz o trabalho recursivo real
@@ -198,7 +197,7 @@ private:
     {
       // Caso 2: O valor de split corta a faixa informada
       if (node->Split_Value >= bounds.min()[D-1] && node->Split_Value <= bounds.max()[D-1]) {
-        for (int _valores = node->fist; _valores < node->fist + node->cout; _valores++) {
+        for (int _valores = node->first; _valores < node->first + node->count; _valores++) {
           bool ponto_valido = true;
           
           for (int _dim = D - 1; _dim >= 1; _dim--) {
@@ -239,8 +238,8 @@ private:
     real Split_Value;
     real Min_Valure;
     real Max_Valure;
-    int fist;
-    int cout;
+    int first;
+    int count;
 
     int antes;
     int depois;
@@ -250,12 +249,12 @@ private:
     AssociatedTree* _assocTree{};
 
     // Construtor para inicializar os membros do nó
-    Node(real Split_Value, real Min_Valure, real Max_Valure, int fist):
+    Node(real Split_Value, real Min_Valure, real Max_Valure, int first):
       Split_Value{Split_Value},
       Min_Valure{Min_Valure},
       Max_Valure{Max_Valure},
-      fist{fist},
-      cout{1},
+      first{first},
+      count{1},
       antes{0},
       depois{0},
       _childL{nullptr},
