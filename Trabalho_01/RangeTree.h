@@ -119,6 +119,14 @@ public:
     _root = build_recursivo(points, 0, n);
   }
 
+  size_t query(const A& points, const Bounds& bounds, PointFunc f) const
+  {
+    if (!_root) return 0;
+    return query_recursivo(points, bounds, f, _root);
+  }
+
+private:
+
   // função recursiva para construir a árvore, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
   auto* build_recursivo(const A& points, int inicio,int fim)
   {
@@ -172,14 +180,6 @@ public:
     }
     node->cout += node->antes + node->depois;
   }
-
-  size_t query(const A& points, const Bounds& bounds, PointFunc f) const
-  {
-    if (!_root) return 0;
-    return query_recursivo(points, bounds, f, _root);
-  }
-
-private:
 
   // 2. Função interna que faz o trabalho recursivo real
   size_t query_recursivo(const A& points, const Bounds& bounds, PointFunc f, auto* node) const
@@ -236,11 +236,6 @@ private:
   // definir as variaveis necessarias
   struct Node
   {
-    /*
-    de finir se os nos vao conter os indices da lista ordena pra aqula dimensao 
-    ou se vao conter copias das listar com os indices ordenados que esta no _root
-    */
-    // insert your code here
     real Split_Value;
     real Min_Valure;
     real Max_Valure;
@@ -253,8 +248,8 @@ private:
     Node* _childL{};
     Node* _childR{};
     AssociatedTree* _assocTree{};
-    // IndexArray* Conjunto_Cano;
 
+    // Construtor para inicializar os membros do nó
     Node(real Split_Value, real Min_Valure, real Max_Valure, int fist):
       Split_Value{Split_Value},
       Min_Valure{Min_Valure},
