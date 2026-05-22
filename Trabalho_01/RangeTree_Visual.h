@@ -162,7 +162,6 @@ public:
         return _x<D>(points[i1]) < _x<D>(points[i2]);
       });
     
-    int i = n / 2;
     _root = build_recursivo(points, 0, n);
   }
 
@@ -172,7 +171,7 @@ public:
     if(inicio >= fim) return static_cast<Node*>(nullptr);
 
     int meio = (inicio + fim) / 2;
-    Node* newNode = new Node(_x<D>(points[_indices[meio]]), _x<D>(points[_indices[inicio]]), _x<D>(points[_indices[fim-1]]), meio, 0);
+    Node* newNode = new Node(_x<D>(points[_indices[meio]]), _x<D>(points[_indices[inicio]]), _x<D>(points[_indices[fim-1]]), meio);
     Calcula_Cout_Fist(newNode, points, inicio, fim);
 
     int tamanho_conjunto_canonic = fim - inicio;
@@ -207,7 +206,7 @@ public:
   {
     int meio = (inicio + fim) / 2;
 
-    for(int i = meio;i >= inicio && _x<D>(points[_indices[i]]) == node->Split_Value;i--)
+    for(int i = meio-1;i >= inicio && _x<D>(points[_indices[i]]) == node->Split_Value;i--)
     {
       node->antes++;
       node->fist = i;
@@ -216,7 +215,7 @@ public:
     {
       node->depois++;
     }
-    node->cout = node->antes + node->depois;
+    node->cout += node->antes + node->depois;
   }
 
   // Função pública para disparar a impressão a partir da raiz
@@ -328,12 +327,12 @@ public:
     AssociatedTree *_assocTree{};
     // IndexArray* Conjunto_Cano;
 
-    Node(real Split_Value, real Min_Valure, real Max_Valure, int fist, int cout) : 
+    Node(real Split_Value, real Min_Valure, real Max_Valure, int fist) : 
     Split_Value{Split_Value},
     Min_Valure{Min_Valure},
     Max_Valure{Max_Valure},
     fist{fist},
-    cout{cout},
+    cout{1},
     antes{0},
     depois{0},
     _childL{nullptr},

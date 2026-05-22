@@ -58,11 +58,10 @@ int main(int argc, char** argv)
   auto points = PointSource{}.random(np, bounds);
 
   bounds.setEmpty();
-  bounds.inflate({81, 73, 3});
-  bounds.inflate({49, 93, 24});
+  bounds.inflate({5, 5, 5});
+  bounds.inflate({75, 75, 75});
   puts("**Naive query");
   queryTest(points, bounds);
-
   RangeTree rt{points};
 
   rt.build();
