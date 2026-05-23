@@ -54,6 +54,10 @@ public:
   using PointFunc = rtree::PointFunc<A>;
 
   // função expecializada para construir a árvore de dimensão D = 1, onde cada nó da árvore contém um índice para o ponto correspondente
+  /*
+    Essa função vai apenas ordenar o vetor de indices que receber da dimenção superior e ordenar 
+    ele na dimensão 1, ou seja, ordena os indices dos pontos de acordo com o valor da coordenada 1 dos pontos.
+  */
   void build(const A& points,int tamanho, IndexArray indices)
   {
     // busca o valor do ponto: _x<1>(points[1])
@@ -71,6 +75,11 @@ public:
   }
  
   // função de busca para percorrer a árvore e encontrar os pontos que vão ser enviados à função f
+  /*
+    Essa função vai percorrer o vetor de indices ordenados e verificar se o valor da coordenada 1 do ponto correspondente ao indice atual está dentro dos limites informados. 
+    Se estiver, a função f é chamada com o ponto correspondente ao indice atual e o contador de pontos encontrados é incrementado. 
+    O loop continua até que o valor da coordenada 1 do ponto correspondente ao indice atual seja maior que o limite máximo informado, momento em que a busca é interrompida.
+  */
   size_t query(const A& points, const Bounds& bounds, PointFunc f) const
   { 
     size_t pontos_encontrados = 0;
@@ -106,6 +115,12 @@ public:
   }
 
   // função para contruir a arvore de dimenção D > 1, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
+  /*
+    Essa função vai construir a árvore de dimensão D > 1, onde cada nó da árvore contém uma árvore associada para as dimensões restantes.
+    A função recebe o vetor de pontos, o número de pontos e um vetor de índices ordenados (opcional) e constrói a árvore usando a função build_recursivo. 
+    O vetor de índices ordenados é usado para construir a árvore de dimensão D > 1, onde cada nó da árvore contém uma árvore associada para as dimensões restantes. 
+    Se o vetor de índices ordenados não for fornecido, a função cria um vetor de índices ordenados usando a função std::iota para preencher o vetor com os índices dos pontos.
+  */
   void build(const A& points,const int n,const IndexArray indices = IndexArray{})
   {
     assert(!_root); // o assert vai garantir q a arvore seja construida apenas uma vez.
@@ -130,6 +145,9 @@ public:
     _root = build_recursivo(points, 0, n);
   }
 
+  /*
+    Essa função vai percorrer a árvore e encontrar os pontos que vão ser enviados à função f
+  */
   size_t query(const A& points, const Bounds& bounds, PointFunc f) const
   {
     if (!_root) return 0;
@@ -139,6 +157,14 @@ public:
 private:
 
   // função recursiva para construir a árvore, onde cada nó da árvore contém uma árvore associada para as dimensões restantes
+  /*
+    Essa função vai construir a árvore de dimensão D > 1, onde cada nó da árvore contém uma árvore associada para as dimensões restantes. 
+    A função recebe o vetor de pontos, os índices de início e fim do vetor de índices ordenados e retorna um ponteiro para o nó raiz da árvore construída. 
+    A função calcula o valor de split como a coordenada D do ponto correspondente ao índice do meio do vetor de índices ordenados. 
+    Em seguida, a função calcula o número de pontos que têm a mesma coordenada D do valor de split e armazena essa informação no nó. 
+    Se houver mais de um ponto com a mesma coordenada D do valor de split, a função constrói uma árvore associada para esses pontos usando a função build da classe BBST para a dimensão D-1. 
+    Por fim, a função chama recursivamente para construir as subárvores esquerda e direita usando os índices ajustados para levar em conta os pontos com a mesma coordenada D do valor de split.
+  */
   auto* build_recursivo(const A& points, int inicio,int fim)
   {
 
@@ -164,6 +190,12 @@ private:
     return newNode;
   }
 
+  /*
+    Essa função vai gerar um vetor de índices com os índices dos pontos que estão dentro da faixa informada.
+    A função recebe os índices de início e fim do vetor de índices ordenados e o número de pontos que têm a mesma coordenada D do valor de split. 
+    A função cria um novo vetor de índices e preenche esse vetor com os índices dos pontos correspondentes aos índices de início e fim do vetor de índices ordenados. 
+    Esse vetor vai ser o conjunto canonico para a construção da árvore associada, ou seja, ele vai conter os índices dos pontos que têm a mesma coordenada D do valor de split e que estão dentro da faixa informada.
+  */
   IndexArray Gera_indises(int inicio,int fim, int n)
   {
     IndexArray indices = IndexArray(n);
@@ -176,6 +208,9 @@ private:
     return indices;
   }
 
+  /*
+    Essa função vai calcular o número de pontos que têm a mesma coordenada D do valor de split e armazena essa informação no nó.
+  */
   void Calcula_Count_First(auto &node, const A& points,int inicio,int fim)
   {
     int meio = (inicio + fim) / 2;
@@ -192,7 +227,15 @@ private:
     node->count += node->antes + node->depois;
   }
 
-  // 2. Função interna que faz o trabalho recursivo real
+  /*
+    Essa função vai percorrer a árvore e encontrar os pontos que vão ser enviados à função f
+    A função recebe o vetor de pontos, os limites da consulta, a função f e um ponteiro para o nó atual da árvore. 
+    A função verifica se o nó atual está totalmente contido na faixa informada. 
+    Se estiver, a função chama a função query da árvore associada para encontrar os pontos correspondentes aos índices armazenados no nó e envia esses pontos para a função f. 
+    Se o valor de split do nó atual corta a faixa informada, a função percorre os índices armazenados no nó e verifica se os pontos correspondentes a esses índices estão dentro da faixa informada. 
+    Se estiverem, a função f é chamada com esses pontos e o contador de pontos encontrados é incrementado. 
+    Por fim, a função chama recursivamente para percorrer as subárvores esquerda e direita, ajustando os limites da consulta para levar em conta o valor de split do nó atual.
+  */
   size_t query_recursivo(const A& points, const Bounds& bounds, PointFunc f, auto* node) const
   {
     if (!node) return 0;
@@ -243,8 +286,21 @@ private:
   using real = typename P::value_type;
   using AssociatedTree = BBST<D - 1, P, A>;
 
-  // definir a estrutura de nó da árvore, que deve conter um índice para o ponto correspondente, um ponteiro para a árvore associada e ponteiros para os filhos esquerdo e direito
-  // definir as variaveis necessarias
+  /*
+    Estrutura que representa um nó da árvore de intervalos.
+    Split_Value: valor de divisão para a dimensão D do nó.
+    Min_Valure: valor mínimo da coordenada D dos pontos armazenados no nó.
+    Max_Valure: valor máximo da coordenada D dos pontos armazenados no nó.
+    first: índice do primeiro ponto no vetor de índices ordenados que tem a mesma coordenada D do valor de divisão.
+    count: número de pontos que têm a mesma coordenada D do valor de divisão.
+    antes: número de pontos que têm a mesma coordenada D do valor de divisão e estão antes do índice "meio do vetor" no vetor de índices ordenados.
+    depois: número de pontos que têm a mesma coordenada D do valor de divisão e estão depois do índice "meio do vetor" no vetor de índices ordenados.
+    _childL: ponteiro para o filho esquerdo do nó.
+    _childR: ponteiro para o filho direito do nó.
+    _assocTree: ponteiro para a árvore associada que contém os pontos que têm a mesma coordenada D do valor de divisão. Essa árvore associada é 
+    construída usando a função build da classe BBST para a dimensão D-1 e é usada para encontrar os pontos correspondentes aos índices armazenados 
+    no nó quando o nó está totalmente contido na faixa informada durante a consulta.
+   */
   struct Node
   {
     real Split_Value;
@@ -261,6 +317,16 @@ private:
     AssociatedTree* _assocTree{};
 
     // Construtor para inicializar os membros do nó
+    /*
+    Essa função é o construtor da estrutura Node, que representa um nó da árvore de intervalos.
+    O construtor recebe os seguintes parâmetros:
+    Split_Value: valor de divisão para a dimensão D do nó.
+    Min_Valure: valor mínimo da coordenada D dos pontos armazenados no nó.
+    Max_Valure: valor máximo da coordenada D dos pontos armazenados no nó.
+    first: índice do primeiro ponto no vetor de índices ordenados que tem a mesma coordenada D do valor de divisão.
+    O construtor inicializa os membros do nó com os valores fornecidos e define os ponteiros para os filhos esquerdo e direito como nullptr, bem como o ponteiro para
+    a árvore associada como nullptr. O membro count é inicializado como 1, e os membros antes e depois são inicializados como 0.
+    */
     Node(real Split_Value, real Min_Valure, real Max_Valure, int first):
       Split_Value{Split_Value},
       Min_Valure{Min_Valure},
