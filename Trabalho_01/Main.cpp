@@ -1,3 +1,15 @@
+/*
+Alunos: Ari Vargas Leal Filho, Cassiano Carvalho de Souza, Lucas Lacerda Arruda.
+
+Na execução deste trabalho, todos os objetivos foram concluídos integralmente:
+Construção da BBST de dimensão 1D: Lucas (Build e Query);
+Construção da BBST de dimensão D (2D, 3D, ...): Cassiano (Build) e Ari (Query).
+A implementação rodou e devolveu corretamente todas as respostas dos casos de testes executados.
+
+Link do vídeo (Google Drive): https://drive.google.com/file/d/1kl2i4KrdJ4JFGMfZVSyZtkHS3SN-hBMb/view?usp=sharing
+OBS: O vídeo tem mais de 16 minutos, pois explicamos em detalhes a lógica usada nas funções.
+*/
+
 #include "graphics/Bounds3.h"
 #include "graphics/Vec3.h"
 #include "RangeTree.h"
@@ -49,7 +61,7 @@ void queryTest(const PointArray& points, const Bounds& bounds)
 
 int main(int argc, char** argv)
 {
-   size_t np{200};
+  size_t np{200};
   cg::Bounds3f bounds;
 
   bounds.inflate({0, 0, 0});
@@ -59,7 +71,7 @@ int main(int argc, char** argv)
 
   bounds.setEmpty();
   bounds.inflate({5, 5, 5});
-  bounds.inflate({75, 75, 75});
+  bounds.inflate({35, 35, 35});
   puts("**Naive query");
   queryTest(points, bounds);
   RangeTree rt{points};
