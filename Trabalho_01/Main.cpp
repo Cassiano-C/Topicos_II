@@ -64,24 +64,27 @@ void queryTest(const PointArray& points, const Bounds& bounds)
 
 int main(int argc, char** argv)
 {
-  size_t np{200};
+  size_t np{10000}; // quantidade de pontos a serem gerados aleatoriamente para teste
   cg::Bounds3f bounds;
 
+  // Area de testes
   bounds.inflate({0, 0, 0});
-  bounds.inflate({100, 100, 100});
+  bounds.inflate({50, 50, 50});
   
   auto points = PointSource{}.random(np, bounds);
 
+  // Limites para a consulta
   bounds.setEmpty();
   bounds.inflate({5, 5, 5});
-  bounds.inflate({35, 35, 35});
+  bounds.inflate({10, 10, 10});
   puts("**Naive query");
   queryTest(points, bounds);
   RangeTree rt{points};
-
+  
   rt.build();
   puts("**RT query");
   np = rt.query(bounds, printPoint);
+
   printf("%zu points found\n", np);
   puts("Press any key to exit...");
   (void)getchar();
