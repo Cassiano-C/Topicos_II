@@ -6,8 +6,8 @@ Construção da BBST de dimensão 1D: Lucas (Build e Query);
 Construção da BBST de dimensão D (2D, 3D, ...): Cassiano (Build) e Ari (Query).
 A implementação rodou e devolveu corretamente todas as respostas dos casos de testes executados.
 
-Link do vídeo (Google Drive): https://drive.google.com/file/d/1kl2i4KrdJ4JFGMfZVSyZtkHS3SN-hBMb/view?usp=sharing
-OBS: O vídeo tem mais de 16 minutos, pois explicamos em detalhes a lógica usada nas funções.
+Link do vídeo (YouTube): https://youtu.be/9mgXtaBgcpY
+OBS: O vídeo tem mais de 13 minutos, pois explicamos em detalhes a lógica usada nas funções.
 */
 
 #ifndef __RangeTree_h
