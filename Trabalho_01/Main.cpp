@@ -33,17 +33,20 @@ struct cg::PointTraits<Point>
 using PointSource = cg::PointSource<Point, PointArray>;
 using RangeTree = cg::RangeTree<Point, PointArray>;
 
+// Função auxiliar para imprimir as coordenadas de um ponto dado seu ID.
 void print(size_t id, const Point& p)
 {
   printf("ID original %02zu -> Coordenadas: <%g, %g, %g>\n", id, p.x, p.y, p.z);
 }
 
+// Função de callback para imprimir um ponto encontrado durante a consulta na RangeTree.
 bool printPoint(const PointArray& points, size_t pid)
 {
   print(pid, points[pid]);
   return true;
 }
 
+// Função de teste para realizar uma consulta ingênua (naive) nos pontos, verificando quais estão contidos dentro dos limites especificados.
 void queryTest(const PointArray& points, const Bounds& bounds)
 {
   size_t np{};

@@ -172,7 +172,7 @@ private:
 
     int meio = (inicio + fim) / 2;
     Node* newNode = new Node(_x<D>(points[_indices[meio]]), _x<D>(points[_indices[inicio]]), _x<D>(points[_indices[fim-1]]), meio);
-    Calcula_Count_First(newNode, points, inicio, fim);
+    Calcula_Count_First(newNode, points, inicio, fim,meio);
 
     int tamanho_conjunto_canonic = fim - inicio;
     if(tamanho_conjunto_canonic > 0)
@@ -211,10 +211,8 @@ private:
   /*
     Essa função vai calcular o número de pontos que têm a mesma coordenada D do valor de split e armazena essa informação no nó.
   */
-  void Calcula_Count_First(auto &node, const A& points,int inicio,int fim)
-  {
-    int meio = (inicio + fim) / 2;
-
+  void Calcula_Count_First(auto &node, const A& points,int inicio,int fim,int meio)
+    {
     for(int i = meio-1;i >= inicio && _x<D>(points[_indices[i]]) == node->Split_Value;i--)
     {
       node->antes++;
@@ -373,6 +371,7 @@ public:
 
   void build()
   {
+    // Ja mando os pontos e quantidade de pontos 
     _mainTree.build(_points, _points.size());
   }
 
