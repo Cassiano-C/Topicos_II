@@ -27,7 +27,20 @@ TreeIteratorBase::increment()
 void
 TreeIteratorBase::decrement()
 {
-  // INSERT YOUR CODE HERE
+  if (_node->_childL)
+    for (_node = _node->_childL; _node->_childR;)
+      _node = _node->_childR;
+  else
+  {
+    auto p = _node->_parent;
+
+    while (p && _node == p->_childL)
+    {
+      _node = p;
+      p = p->_parent;
+    }
+    _node = p;
+  }
 }
 
 void
