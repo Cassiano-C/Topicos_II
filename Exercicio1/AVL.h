@@ -138,6 +138,19 @@ public:
   }
     
   // INSERT YOUR CODE HERE
+  auto& operator --()
+  {
+    decrement();
+    return *this;
+  }
+
+  auto operator --(int)
+  {
+    auto temp = *this;
+ 
+    decrement();
+    return temp;
+  }
 
 }; // TreeIterator
 
@@ -199,6 +212,10 @@ public:
 
   iterator begin() const;
 
+  // INSERT YOUR CODE HERE
+  auto rbegin() const -> iterator;
+  auto rend() const -> iterator;
+
   auto end() const
   {
     return iterator{nullptr};
@@ -255,6 +272,25 @@ Tree<T, C>::begin() const -> iterator
     while (node->_childL)
       node = node->_childL;
   return iterator{(Node*)node};
+}
+
+template <typename T, typename C>
+auto
+Tree<T,C>::rbegin() const -> iterator
+{
+  TreeNodeBase* node{_root};
+
+  if (node)
+    while (node->_childR)
+      node = node->_childR;
+  return iterator{(Node*)node};
+}
+
+template <typename T, typename C>
+auto
+Tree<T,C>::rend() const -> iterator
+{
+  return iterator{nullptr};
 }
 
 template <typename T, typename C>
