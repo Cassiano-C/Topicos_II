@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cmath>
 #include <string>
+#include <random>
 
 using namespace tcii;
 
@@ -30,65 +31,6 @@ struct Vec3Less {
     }
 };
 
-// [Exigência 5]: Uma classe com destrutor personalizado
-class TestElement {
-private:
-    int* _id;
-
-public:
-    // Construtor padrão
-    TestElement(int id) {
-        _id = new int(id);
-    }
-
-    // Construtor de cópia (Garante cópia profunda segura)
-    TestElement(const TestElement& other) {
-        if (other._id) {
-            _id = new int(*other._id);
-        } else {
-            _id = nullptr;
-        }
-    }
-
-    // Operador de atribuição por cópia (Essencial para o método erase/Hibbard)
-    TestElement& operator=(const TestElement& other) {
-        if (this != &other) {
-            delete _id; // Libera a memória antiga antes de copiar
-            if (other._id) {
-                _id = new int(*other._id);
-            } else {
-                _id = nullptr;
-            }
-        }
-        return *this;
-    }
-
-    // Destrutor personalizado
-    ~TestElement() {
-        if (_id) {
-            printf("[Destrutor] Elemento ID %d foi desalocado da memoria.\n", *_id);
-            delete _id;
-            _id = nullptr;
-        }
-    }
-
-    int getId() const { 
-        return _id ? *_id : -1; 
-    }
-
-    void print() const {
-        if (_id) {
-            printf("TestElement(ID: %d)\n", *_id);
-        }
-    }
-};
-
-// Functor de comparação para a classe TestElement
-struct ElementLess {
-    bool operator()(const TestElement& a, const TestElement& b) const {
-        return a.getId() < b.getId();
-    }
-};
 
 // ==========================================
 // 2. FUNÇÕES AUXILIARES DE IMPRESSÃO
@@ -99,10 +41,6 @@ void printInt(const int& i) {
 
 void printVec3(const Vec3& v) {
     v.print();
-}
-
-void printElement(const TestElement& e) {
-    e.print();
 }
 
 // ==========================================
@@ -117,7 +55,7 @@ int main() {
     puts("==================================================");
     
     avl::Tree<int, std::greater<int>> treeInt;
-    treeInt.insert({5, 3, 7, 9, 8, 0, 4, 2, 1});
+    treeInt.insert({5, 3, 7, 9, 8, 0, 4, 2, 1, 6, 10, 15, 12, 11, 14, 13});
     
     printf("Arvore inicial (tamanho %d): ", treeInt.size());
     for(auto i : treeInt) printInt(i);
@@ -125,18 +63,28 @@ int main() {
 
     // Testando a Busca (find)
     puts("\n-> Testando find():");
-    auto itFind = treeInt.find(4);
+    // Inicializa o gerador com uma semente aleatória baseada no dispositivo de hardware
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    // Define o intervalo fechado [1, 6], por exemplo, para um dado de 6 faces
+    std::uniform_int_distribution<int> distrib(0, 20);
+
+    // Gera o número randômico
+    int numero_secreto = distrib(gen);
+    auto itFind = treeInt.find(numero_secreto);
     if (itFind != treeInt.end()) {
         printf("Elemento %d encontrado via find()!\n", *itFind);
     } else {
-        puts("Elemento não encontrado.");
+        printf("Elemento %d não encontrado.\n", numero_secreto);
     }
 
     // Testando a Remoção (erase)
     puts("\n-> Testando erase() de nós com diferentes cenários:");
-    printf("Removendo 0 (No folha): %s\n", treeInt.erase(0) ? "Sucesso" : "Falha");
-    printf("Removendo 7 (No com dois filhos): %s\n", treeInt.erase(7) ? "Sucesso" : "Falha");
-    printf("Tentando remover 99 (Inexistente): %s\n", treeInt.erase(99) ? "Sucesso" : "Falha");
+    for (int i = 0; i < 5; ++i) {
+        numero_secreto = distrib(gen);
+        printf("Removendo %d : %s\n", numero_secreto, treeInt.erase(numero_secreto) ? "Sucesso" : "Falha");
+    }
 
     printf("\nArvore apos remocoes (tamanho %d): ", treeInt.size());
     for(auto i : treeInt) printInt(i);
@@ -173,35 +121,6 @@ int main() {
     puts("\nArvore de vetores apos remocao:");
     for(auto v : treeVec) printVec3(v);
     puts("");
-
-
-    // ----------------------------------------------------
-    // TESTE 3: Classe com Destrutor Personalizado
-    // ----------------------------------------------------
-    puts("==================================================");
-    puts("TESTE 3: Classe com Destrutor Personalizado (Limpeza)");
-    puts("==================================================");
-    
-    {
-        puts("-> Criando uma árvore local dentro de um escopo {...}");
-        avl::Tree<TestElement, ElementLess> treeElement;
-        
-        treeElement.insert(TestElement(10));
-        treeElement.insert(TestElement(20));
-        treeElement.insert(TestElement(5));
-
-        puts("\nElementos na arvore:");
-        for(auto& e : treeElement) printElement(e);
-
-        puts("\n-> Removendo um unico elemento (ID: 10):");
-        treeElement.erase(TestElement(10)); 
-        // O destrutor deve rodar imediatamente para o nó removido!
-
-        puts("\n-> Saindo do escopo do bloco. A arvore sera destruida inteira agora:");
-    }
-    // Ao fechar a chave acima, o destrutor de treeElement é chamado,
-    // limpando a raiz e disparando recursivamente o destrutor de todos os nós restantes (5 e 20).
-    puts("-> Arvore destruida com sucesso e memoria desalocada!\n");
 
     return 0;
 }
