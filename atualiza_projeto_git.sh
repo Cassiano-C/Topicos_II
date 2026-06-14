@@ -2,7 +2,7 @@
 # Auto-sync do projeto com merge seguro
 # Autor: Cassiano
 
-branch="main"
+branch="Cassiano"
 usuario="Cassiano"
 data_hora=$(date '+%d-%m-%Y_%H-%M-%S')
 
