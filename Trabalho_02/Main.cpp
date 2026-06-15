@@ -1,30 +1,41 @@
-#include "MeshDecoration.h"
+#include "Mesh.h"
+#include "HEMeshDecoration.h"
+#include <iostream>
+#include <cassert>
 
 using namespace tcii::cg;
 
-enum { VD, TD };
+enum { VD, TD, ED };
+
+namespace tcii::cg {
+  ObjectPtr<TriangleMesh> readOBJ(const char* filename);
+}
 
 auto
-decorate1(const TriangleMesh& mesh)
+decorate1(const Mesh& mesh)
 {
   using Color = Vec3f;
   using VA = ElementSoA<Color>;
   using TA = ElementSoA<Color>;
-  using MD = MeshDecoration<VA, TA>;
+  using EA = ElementSoA<int>;
+  using MD = HEMeshDecoration<VA, TA, EA>;
 
-  auto md = MD::New(mesh);
-  auto nv = mesh.data().vertexCount();
+  auto md = MD::novo(mesh);
+  auto nv = mesh.vertices().size();
 
   printf("sizeof(md1): %zu\n", sizeof(*md));
   for (decltype(nv) i = 0; i < nv; ++i)
     attributes<VD>(*md).set(i, Color{0, 0, 1});
   set<VD, 0>(*md, 0, Color{1, 1, 0});
 
-  auto nt = mesh.data().triangleCount();
+  auto nt = mesh.faces().size();
 
   for (decltype(nt) i = 0; i < nt; ++i)
     attributes<TD>(*md).set(i, Color{0, 1, 0});
   set<TD, 0>(*md, 0, Color{0, 1, 1});
+
+  md->decorarArestasDeBorda();
+
   return md;
 }
 
@@ -34,10 +45,10 @@ decorate2(OtherMD* other)
 {
   using Color = Vec3f;
   using VA = ElementSoA<Color, Vec3f>;
-  using MD = MeshDecoration<VA, typename OtherMD::TA>;
+  using MD = HEMeshDecoration<VA, typename OtherMD::TA, typename OtherMD::EA>;
 
-  auto md = MD::New(other);
-  auto nv = md->mesh()->data().vertexCount();
+  auto md = MD::novo(other);
+  auto nv = md->mesh()->vertices().size();
 
   printf("sizeof(md2): %zu\n", sizeof(*md));
   for (decltype(nv) i = 0; i < nv; ++i)
@@ -51,9 +62,9 @@ template <typename OtherMD>
 auto
 decorate3(OtherMD* other)
 {
-  using MD = MeshDecoration<typename OtherMD::VA, void>;
+  using MD = HEMeshDecoration<typename OtherMD::VA, void, void>;
 
-  auto md = MD::New(other);
+  auto md = MD::novo(other);
 
   printf("sizeof(md3): %zu\n", sizeof(*md));
   set<VD, 1>(*md, 0, Vec3f{3, 3, 3});
@@ -61,42 +72,14 @@ decorate3(OtherMD* other)
 }
 
 void
-test()
+test(const Mesh& mesh)
 {
-  /*
-  struct A
-  {
-    A() {}
-    void f() {}
-  };
-  struct B
-  {
-    B() {}
-    void f() {}
-  };
-  struct C
-  {
-    int c;
-  };
-  struct EMPTY_BASES D: A, B, C
-  {
-    int d;
-  };
-
-  printf("sizeof(A):%llu\n", sizeof(A));
-  printf("sizeof(C):%llu\n", sizeof(C));
-  printf("sizeof(D):%llu\n", sizeof(D));
-  */
   using VA = ElementSoA<Vec3f, Vec3f>;
   using TA = ElementSoA<Vec3f>;
-  using MD = MeshDecoration<VA, TA>;
-  using DS = DecorationSet<VA, TA, void>;
-  DS ds1{3u, 4u, 5u};
+  using EA = ElementSoA<int>;
+  using DS = DecorationSet<VA, TA, EA>;
+  DS ds1{mesh.vertices().size(), mesh.faces().size(), mesh.edges().size()};
   printf("**%zu\n", sizeof ds1);
-
-  auto& a0 = attributes<0>(ds1);
-  auto& a1 = attributes<1>(ds1);
-  //auto& a2 = attributes<2>(ds);
 
   set<0, 1>(ds1, 0, Vec3f{1, 1, 1});
 
@@ -113,36 +96,33 @@ test()
 int
 main()
 {
-  //test();
-  /*
-  puts("Press any key to exit...");
-  (void)getchar();
-  return 0;
-  */
-
   auto filename = "../../meshes/f-16.obj";
-  auto mesh = readOBJ(filename);
+  auto triangleMesh = readOBJ(filename);
 
-  if (!mesh)
+  if (!triangleMesh)
     printf("Could not read '%s'\n", filename);
   else
   {
-    //mesh->print(filename);
+    Mesh minhaMesh(*triangleMesh);
 
-    auto md1 = decorate1(*mesh);
+    test(minhaMesh);
+    std::cout << "\n--- Iniciando Execucao do Pipeline A3 ---\n\n";
+
+    auto md1 = decorate1(minhaMesh);
 
     std::cout << get<VD, 0>(*md1, 0) << '\n';
     std::cout << get<TD, 0>(*md1, 0) << '\n';
+    md1->printDebugArestas();
 
     auto md2 = decorate2(md1.get());
 
     std::cout << get<VD, 1>(*md2, 0) << '\n';
     std::cout << get<TD, 0>(*md2, 0) << '\n';
- 
+    std::cout << "Aresta 0 (Flag recuperada em md2): " << get<ED, 0>(*md2, 0) << '\n';
+
     auto md3 = decorate3(md2.get());
 
     std::cout << get<VD, 1>(*md3, 0) << '\n';
-
   }
   puts("Press any key to exit...");
   (void)getchar();
