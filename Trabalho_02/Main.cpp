@@ -30,11 +30,13 @@ decorate1(const Mesh& mesh)
 
   auto nt = mesh.faces().size();
 
+
   for (decltype(nt) i = 0; i < nt; ++i)
     attributes<TD>(*md).set(i, Color{0, 1, 0});
   set<TD, 0>(*md, 0, Color{0, 1, 1});
 
   md->decorarArestasDeBorda();
+
 
   return md;
 }
@@ -49,6 +51,7 @@ decorate2(OtherMD* other)
 
   auto md = MD::novo(other);
   auto nv = md->mesh()->vertices().size();
+
 
   printf("sizeof(md2): %zu\n", sizeof(*md));
   for (decltype(nv) i = 0; i < nv; ++i)
@@ -66,6 +69,7 @@ decorate3(OtherMD* other)
 
   auto md = MD::novo(other);
 
+
   printf("sizeof(md3): %zu\n", sizeof(*md));
   set<VD, 1>(*md, 0, Vec3f{3, 3, 3});
   return md;
@@ -80,6 +84,7 @@ test(const Mesh& mesh)
   using DS = DecorationSet<VA, TA, EA>;
   DS ds1{mesh.vertices().size(), mesh.faces().size(), mesh.edges().size()};
   printf("**%zu\n", sizeof ds1);
+
 
   set<0, 1>(ds1, 0, Vec3f{1, 1, 1});
 
@@ -113,6 +118,7 @@ main()
     std::cout << get<VD, 0>(*md1, 0) << '\n';
     std::cout << get<TD, 0>(*md1, 0) << '\n';
     md1->printDebugArestas();
+
 
     auto md2 = decorate2(md1.get());
 
