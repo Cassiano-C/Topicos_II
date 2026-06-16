@@ -1,0 +1,47 @@
+#include "MeshA3.h"
+#include "HEMeshDecoration.h"
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+
+int main()
+{
+    std::srand(static_cast<unsigned>(std::time(0)));
+
+    tcii::cg::MeshA3 minhaMesh; 
+    
+    // Definindo tamanhos para teste
+    tcii::cg::index_t nv = 10; 
+    tcii::cg::index_t ne = 15; // Arestas
+    tcii::cg::index_t nf = 8;  // Faces
+    tcii::cg::index_t nb = 2;  // Bordas
+
+    // Instanciação: Vértices(float), Arestas(bool), Faces(Vec3f), Bordas(float)
+    auto decoracao = tcii::cg::HEMeshDecoration<float, bool, tcii::cg::Vec3f, float>::New(nv, ne, nf, nb);
+
+    // --- PREENCHIMENTO ---
+    for (tcii::cg::index_t i = 0; i < nv; ++i) decoracao->setAttr<0, 0>(i, static_cast<float>(std::rand() % 100) / 100.0f);
+    for (tcii::cg::index_t i = 0; i < ne; ++i) decoracao->setAttr<1, 0>(i, (std::rand() % 2 == 0)); // Bool aleatório
+    for (tcii::cg::index_t i = 0; i < nf; ++i) decoracao->setAttr<2, 0>(i, tcii::cg::Vec3f{static_cast<float>(std::rand()%100)/100.0f, 0.5f, 0.5f});
+    for (tcii::cg::index_t i = 0; i < nb; ++i) decoracao->setAttr<3, 0>(i, 1.0f); // Valor da borda
+
+    // --- IMPRESSÃO ---
+    std::cout << "--- Resultados Completos da Topologia ---" << std::endl;
+
+    std::cout << "\n[Vértices (N=0)]" << std::endl;
+    for (tcii::cg::index_t i = 0; i < nv; ++i) std::cout << "Vértice [" << i << "]: " << decoracao->getAttr<0, 0>(i) << std::endl;
+
+    std::cout << "\n[Arestas (N=1)]" << std::endl;
+    for (tcii::cg::index_t i = 0; i < ne; ++i) std::cout << "Aresta [" << i << "]: " << (decoracao->getAttr<1, 0>(i) ? "Ativa" : "Inativa") << std::endl;
+
+    std::cout << "\n[Faces (N=2)]" << std::endl;
+    for (tcii::cg::index_t i = 0; i < nf; ++i) {
+        auto c = decoracao->getAttr<2, 0>(i);
+        std::cout << "Face [" << i << "]: (" << c.x << ", " << c.y << ", " << c.z << ")" << std::endl;
+    }
+
+    std::cout << "\n[Bordas (N=3)]" << std::endl;
+    for (tcii::cg::index_t i = 0; i < nb; ++i) std::cout << "Borda [" << i << "]: " << decoracao->getAttr<3, 0>(i) << std::endl;
+
+    return 0;
+}
