@@ -1,12 +1,6 @@
 #ifndef __MeshDecoration_h
 #define __MeshDecoration_h
 
-// OVERVIEW: MeshDecoration.h
-// ========
-// Class definition for triangle mesh decoration.
-//
-// Author: Paulo Pagliosa
-// Last revision: 03/06/2026
 
 #include "DecorationSet.h"
 #include "TriangleMesh.h"
