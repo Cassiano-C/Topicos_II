@@ -3,6 +3,11 @@
 
 #include "TriangleMesh.h"
 #include <vector>
+#include <unordered_map>
+#include <utility>
+#include <iostream>
+#include <iomanip>
+#include <GL/gl.h>
 
 namespace tcii::cg
 {
@@ -52,131 +57,121 @@ public:
     const std::vector<Edge>& edges() const { return _edges; }
     const std::vector<Face>& faces() const { return _faces; }
     const std::vector<Boundary>& boundaries() const { return _boundaries; }
+    // ADICIONE ESTA LINHA ABAIXO PARA LIBERAR O ACESSO DE LEITURA:
+    const std::vector<HalfEdge>& halfEdges() const { return _halfEdges; }
 
-    // Métodos de Vizinhança (Tarefa A2)
     void processIncidentEdges(index_t vertexIdx, auto&& function)
     {
-        index_t startHe = _vertices[vertexIdx].halfEdge;
-        if (startHe == null_index) return;
+    if (vertexIdx >= _vertices.size()) return;
 
-        index_t currentHe = startHe;
-        do
-        {
+    index_t startHe = _vertices[vertexIdx].halfEdge;
+    if (startHe == null_index) return;
+
+    index_t currentHe = startHe;
+    do
+    {
+        // Executa a função na aresta cheia (Edge) associada
+        if (_halfEdges[currentHe].edge != null_index) {
             function(_halfEdges[currentHe].edge);
+        }
 
-            index_t twinHe = _halfEdges[currentHe].twin;
-            if (twinHe == null_index) break; 
+        // Navegação ultra segura ao redor do vértice de origem:
+        // Pega a anterior no triângulo (prev) e vai para a gêmea dela (twin)
+        index_t prevHe = _halfEdges[currentHe].prev;
+        currentHe = _halfEdges[prevHe].twin;
 
-            currentHe = _halfEdges[twinHe].next;
-
-        } while (currentHe != startHe && currentHe != null_index);
+    } while (currentHe != startHe && currentHe != null_index);
     }
 
     void processVertexKRing(index_t vertexIdx, int k, auto&& function)
     {
-        if (vertexIdx >= _vertices.size() || k < 1) return;
+    if (vertexIdx >= _vertices.size() || k < 1) return;
 
-        // Vetor para rastrear quem já foi visitado
-        std::vector<bool> visited(_vertices.size(), false);
-        
-        // Fila para a BFS armazenando pares: {indice_do_vertice, nivel_atual}
-        std::vector<std::pair<index_t, int>> queue;
-        size_t head = 0;
+    std::vector<bool> visited(_vertices.size(), false);
+    std::vector<std::pair<index_t, int>> queue;
+    size_t head = 0;
 
-        // Inicializa com o vértice raiz
-        visited[vertexIdx] = true;
-        queue.push_back({vertexIdx, 0});
+    // O vértice inicial conta como visitado para não ser processado como vizinho dele mesmo
+    visited[vertexIdx] = true;
+    queue.push_back({vertexIdx, 0});
 
-        while (head < queue.size())
+    while (head < queue.size())
+    {
+        auto [currV, currLevel] = queue[head++];
+
+        if (currLevel >= k) continue;
+
+        index_t startHe = _vertices[currV].halfEdge;
+        if (startHe == null_index) continue;
+
+        index_t currentHe = startHe;
+        do
         {
-            auto [currV, currLevel] = queue[head++];
+            // O vértice vizinho está no destino da semi-aresta que sai de currV.
+            // O destino da currentHe é a origem da sua próxima (next).
+            index_t nextHe = _halfEdges[currentHe].next;
+            index_t neighborV = _halfEdges[nextHe].origin;
 
-            // Se chegamos no limite do k-anel, não expandimos mais os vizinhos deste nível
-            if (currLevel >= k) continue;
-
-            // Navegar ao redor do vértice atual 'currV' para achar seus vizinhos diretos
-            index_t startHe = _vertices[currV].halfEdge;
-            if (startHe == null_index) continue;
-
-            index_t currentHe = startHe;
-            do
+            if (neighborV != null_index && !visited[neighborV])
             {
-                // O destino da semi-aresta gêmea é um vértice vizinho direto!
-                index_t twinHe = _halfEdges[currentHe].twin;
-                if (twinHe != null_index)
-                {
-                    index_t neighborV = _halfEdges[twinHe].origin;
+                visited[neighborV] = true;
+                function(neighborV);
+                queue.push_back({neighborV, currLevel + 1});
+            }
 
-                    if (!visited[neighborV])
-                    {
-                        visited[neighborV] = true;
-                        int nextLevel = currLevel + 1;
-                        
-                        // Executa a função do usuário passando o vértice vizinho encontrado
-                        function(neighborV);
+            // Rotaciona de forma segura usando o operador de rotação padrão de Half-Edge
+            index_t prevHe = _halfEdges[currentHe].prev;
+            currentHe = _halfEdges[prevHe].twin;
 
-                        queue.push_back({neighborV, nextLevel});
-                    }
-                }
-
-                // Rotaciona para a próxima semi-aresta que sai de 'currV'
-                if (twinHe == null_index) break;
-                currentHe = _halfEdges[twinHe].next;
-
-            } while (currentHe != startHe && currentHe != null_index);
-        }
+        } while (currentHe != startHe && currentHe != null_index);
     }
-    
+    }
+
     void processFaceKRing(index_t faceIdx, int k, auto&& function)
     {
-        if (faceIdx >= _faces.size() || k < 1) return;
+    if (faceIdx >= _faces.size() || k < 1) return;
 
-        std::vector<bool> visited(_faces.size(), false);
-        std::vector<std::pair<index_t, int>> queue;
-        size_t head = 0;
+    std::vector<bool> visited(_faces.size(), false);
+    std::vector<std::pair<index_t, int>> queue;
+    size_t head = 0;
 
-        visited[faceIdx] = true;
-        queue.push_back({faceIdx, 0});
+    visited[faceIdx] = true;
+    queue.push_back({faceIdx, 0});
 
-        while (head < queue.size())
+    while (head < queue.size())
+    {
+        auto [currF, currLevel] = queue[head++];
+
+        if (currLevel >= k) continue;
+
+        index_t he0 = _faces[currF].halfEdge;
+        if (he0 == null_index) continue;
+
+        index_t he1 = _halfEdges[he0].next;
+        index_t he2 = _halfEdges[he1].next;
+        index_t faceHeIdxs[3] = { he0, he1, he2 };
+
+        for (int i = 0; i < 3; ++i)
         {
-            auto [currF, currLevel] = queue[head++];
-
-            if (currLevel >= k) continue;
-
-            // Uma face triangular tem exatamente 3 semi-arestas. Vamos pegar a primeira:
-            index_t he0 = _faces[currF].halfEdge;
-            if (he0 == null_index) continue;
-
-            index_t he1 = _halfEdges[he0].next;
-            index_t he2 = _halfEdges[he1].next;
-            index_t faceHeIdxs[3] = { he0, he1, he2 };
-
-            // Para cada uma das 3 arestas do triângulo, olha o vizinho do outro lado (twin)
-            for (int i = 0; i < 3; ++i)
+            index_t twinHe = _halfEdges[faceHeIdxs[i]].twin;
+            if (twinHe != null_index)
             {
-                index_t twinHe = _halfEdges[faceHeIdxs[i]].twin;
-                if (twinHe != null_index)
+                index_t neighborF = _halfEdges[twinHe].face;
+
+                // Garante que só visita se for uma face real (não contorno/borda)
+                if (neighborF != null_index && !visited[neighborF])
                 {
-                    index_t neighborF = _halfEdges[twinHe].face;
-
-                    // Se a semi-aresta gêmea pertence a uma face real (não é borda) e não foi visitada
-                    if (neighborF != null_index && !visited[neighborF])
-                    {
-                        visited[neighborF] = true;
-                        int nextLevel = currLevel + 1;
-
-                        // Executa a função passando a face vizinha encontrada
-                        function(neighborF);
-
-                        queue.push_back({neighborF, nextLevel});
-                    }
+                    visited[neighborF] = true;
+                    function(neighborF);
+                    queue.push_back({neighborF, currLevel + 1});
                 }
             }
         }
     }
-    
+    }
+
     void printTopology() const;
+    void renderGL() const;
 
 private:
     std::vector<Vertex> _vertices;
