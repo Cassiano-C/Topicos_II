@@ -91,8 +91,33 @@ int main(int argc, char** argv)
     glutReshapeFunc(redimensionarJanela); // <--- REGISTRADO AQUI
     glutTimerFunc(16, atualizarAnimacao, 0);
 
+    // Faz o print no terminal para ver as imformações da malha antes de abrir a janela gráfica
     std::cout << "Janela gráfica configurada! Abrindo viewport...\n";
-    glutMainLoop(); 
+    // 3. Imprime a topologia (descomenta se quiseres ver a tabela gigante de novo)
+    minhaMesh.printTopology();
+
+    std::cout << "\n[TESTE 1] Arestas incidentes no Vertice 0:\n";
+    minhaMesh.processIncidentEdges(0, [](auto edgeIdx) {
+        std::cout << " -> Conectado a Edge: " << edgeIdx << "\n";
+    });
+
+    // Teste 2: Vertex k-Ring (Vizinhos até distância 2)
+    std::cout << "\n[TESTE 2] Vertices no 2-Anel do Vertice 0:\n";
+    int countV = 0;
+    minhaMesh.processVertexKRing(0, 2, [&countV](auto vertexIdx) {
+        std::cout << " -> Vertice Vizinho: " << vertexIdx << "\n";
+        countV++;
+    });
+    std::cout << "Total de vertices vizinhos encontrados no 2-Anel: " << countV << "\n";
+
+    // Teste 3: Face k-Ring (Faces vizinhas até distância 1)
+    std::cout << "\n[TESTE 3] Faces adjacentes (1-Anel) da Face 0:\n";
+    minhaMesh.processFaceKRing(0, 1, [](auto faceIdx) {
+        std::cout << " -> Face Vizinha: " << faceIdx << "\n";
+    });
+
+    glutMainLoop();
+
 
     return 0;
 }
