@@ -1,47 +1,72 @@
-#include "MeshA3.h"
-#include "HEMeshDecoration.h"
 #include <iostream>
-#include <cstdlib>
-#include <ctime>
+#include <string>
+#include <iomanip>
+#include <algorithm>
+#include "TriangleMesh.h"
+#include "Mesh.h"
+#include "HEMeshDecoration.h"
+#include <random>
 
-int main()
-{
-    std::srand(static_cast<unsigned>(std::time(0)));
+namespace tcii::cg {
+    ObjectPtr<TriangleMesh> readOBJ(const char* filename);
+}
 
-    tcii::cg::MeshA3 minhaMesh; 
-    
-    // Definindo tamanhos para teste
-    tcii::cg::index_t nv = 10; 
-    tcii::cg::index_t ne = 15; // Arestas
-    tcii::cg::index_t nf = 8;  // Faces
-    tcii::cg::index_t nb = 2;  // Bordas
+using namespace tcii::cg;
 
-    // Instanciação: Vértices(float), Arestas(bool), Faces(Vec3f), Bordas(float)
-    auto decoracao = tcii::cg::HEMeshDecoration<float, bool, tcii::cg::Vec3f, float>::New(nv, ne, nf, nb);
+// Definição dos tipos de decoração
+// 0: Vértices (Cor - Vec3f), 1: Arestas (Peso - float), 2: Faces (Flags - int), 3: Bordas
+using VDeco = Vec3f; 
+using EDeco = float;
+using FDeco = int;
+using BDeco = int;
 
-    // --- PREENCHIMENTO ---
-    for (tcii::cg::index_t i = 0; i < nv; ++i) decoracao->setAttr<0, 0>(i, static_cast<float>(std::rand() % 100) / 100.0f);
-    for (tcii::cg::index_t i = 0; i < ne; ++i) decoracao->setAttr<1, 0>(i, (std::rand() % 2 == 0)); // Bool aleatório
-    for (tcii::cg::index_t i = 0; i < nf; ++i) decoracao->setAttr<2, 0>(i, tcii::cg::Vec3f{static_cast<float>(std::rand()%100)/100.0f, 0.5f, 0.5f});
-    for (tcii::cg::index_t i = 0; i < nb; ++i) decoracao->setAttr<3, 0>(i, 1.0f); // Valor da borda
+int main(int argc, char** argv) {
+    const char* filename = "f-16.obj";
 
-    // --- IMPRESSÃO ---
-    std::cout << "--- Resultados Completos da Topologia ---" << std::endl;
+    auto triangleMeshPtr = readOBJ(filename);
+    if (!triangleMeshPtr) return -1;
 
-    std::cout << "\n[Vértices (N=0)]" << std::endl;
-    for (tcii::cg::index_t i = 0; i < nv; ++i) std::cout << "Vértice [" << i << "]: " << decoracao->getAttr<0, 0>(i) << std::endl;
+    Mesh myMesh(*triangleMeshPtr);
 
-    std::cout << "\n[Arestas (N=1)]" << std::endl;
-    for (tcii::cg::index_t i = 0; i < ne; ++i) std::cout << "Aresta [" << i << "]: " << (decoracao->getAttr<1, 0>(i) ? "Ativa" : "Inativa") << std::endl;
+    // Inicialização da Decoração
+    auto decoration = HEMeshDecoration<VDeco, EDeco, FDeco, BDeco>::New(
+        myMesh.vertexCount(), myMesh.edgeCount(), myMesh.faceCount(), myMesh.boundaryCount()
+    );
 
-    std::cout << "\n[Faces (N=2)]" << std::endl;
-    for (tcii::cg::index_t i = 0; i < nf; ++i) {
-        auto c = decoracao->getAttr<2, 0>(i);
-        std::cout << "Face [" << i << "]: (" << c.x << ", " << c.y << ", " << c.z << ")" << std::endl;
+    // Preenchimento de exemplo
+    std::random_device aleatorio; 
+    std::mt19937 floats_aleatorios(aleatorio()); 
+    std::uniform_real_distribution<float> intervalo(0.0f, 1.0f);
+
+    for (index_t i = 0; i < myMesh.vertexCount(); ++i)
+    { 
+        float r = intervalo(floats_aleatorios);
+        float g = intervalo(floats_aleatorios);
+        float b = intervalo(floats_aleatorios);
+        decoration->setAttr<0>(i, Vec3f(r,g,b));
     }
+    for (index_t i = 0; i < myMesh.faceCount(); ++i)   decoration->setAttr<2>(i, (i % 2));
 
-    std::cout << "\n[Bordas (N=3)]" << std::endl;
-    for (tcii::cg::index_t i = 0; i < nb; ++i) std::cout << "Borda [" << i << "]: " << decoracao->getAttr<3, 0>(i) << std::endl;
+    myMesh.setDecoration(ObjectPtr<SharedObject>(decoration.get()));
+
+    // Exibição dos Dados (Estilo teste_01.txt)
+    auto deco = myMesh.getDecoration<HEMeshDecoration<VDeco, EDeco, FDeco, BDeco>>();
+    
+    std::cout << "---DECORAÇÃO (A3) ---" << std::endl;
+    std::cout << "Vértices: " << myMesh.vertexCount() << " | Faces: " << myMesh.faceCount() << " | Semi-Arestas:  " << (myMesh.edgeCount() * 2) << " | Bordas: " << myMesh.boundaryCount() << std::endl;
+
+    std::cout << "\n[VÉRTICES - Cor]" << std::endl;
+    for (index_t i = 0; i < std::min(myMesh.vertexCount(), 10u); ++i) {
+        Vec3f cor = deco->getAttr<0>(i);
+        std::cout << "V" << i << " | Cor: " << cor.x << "," << cor.y << "," << cor.z << std::endl;
+    }
+    std::cout << "E mais 2334 vértices..." << std::endl;
+
+    std::cout << "\n[FACES - Flag (Par ou Ímpar)]" << std::endl;
+    for (index_t i = 0; i < std::min(myMesh.faceCount(), 10u); ++i) {
+        std::cout << "F" << i << " | Flag: " << deco->getAttr<2>(i) << std::endl;
+    }
+    std::cout << "E mais 4582 faces..." << std::endl;
 
     return 0;
-}
+ }
