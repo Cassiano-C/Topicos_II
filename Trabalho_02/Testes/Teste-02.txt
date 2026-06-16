@@ -1,0 +1,168 @@
+#include "TriangleMesh.h"
+#include "Mesh.h"
+#include <iostream>
+#include <chrono>
+#include <vector>
+#include <algorithm>
+
+// --- BUSCAS POR FORÇA BRUTA NA MALHA ANTIGA (Para comparação) ---
+
+// 1. Encontra "arestas" incidentes na malha antiga (aqui simulado encontrando os vértices vizinhos diretos)
+void processIncidentVerticesOld(const tcii::cg::TriangleMesh& oldMesh, unsigned vertexIdx, auto&& function)
+{
+    auto nt = oldMesh.data().triangleCount();
+    std::vector<unsigned> neighbors;
+
+    // Varre TODAS as faces para ver quais contêm o vértice procurado
+    for (unsigned i = 0; i < nt; ++i)
+    {
+        const auto& tri = oldMesh.data().triangle(i);
+        if (tri.i == vertexIdx || tri.j == vertexIdx || tri.k == vertexIdx)
+        {
+            // Se o triângulo toca o vértice, os outros dois vértices dele são vizinhos
+            if (tri.i != vertexIdx) neighbors.push_back(tri.i);
+            if (tri.j != vertexIdx) neighbors.push_back(tri.j);
+            if (tri.k != vertexIdx) neighbors.push_back(tri.k);
+        }
+    }
+
+    // Remove duplicados para ficar justo
+    std::sort(neighbors.begin(), neighbors.end());
+    neighbors.erase(std::unique(neighbors.begin(), neighbors.end()), neighbors.end());
+
+    for (auto v : neighbors) {
+        function(v);
+    }
+}
+
+// 2. Face k-Ring por força bruta na malha antiga
+void processFaceKRingOld(const tcii::cg::TriangleMesh& oldMesh, unsigned faceIdx, int k, auto&& function)
+{
+    if (k < 1) return;
+
+    auto nt = oldMesh.data().triangleCount();
+    std::vector<bool> visited(nt, false);
+    std::vector<std::pair<unsigned, int>> queue;
+    size_t head = 0;
+
+    visited[faceIdx] = true;
+    queue.push_back({faceIdx, 0});
+
+    while (head < queue.size())
+    {
+        auto [currF, currLevel] = queue[head++];
+        if (currLevel >= k) continue;
+
+        const auto& currTri = oldMesh.data().triangle(currF);
+
+        // Varre TODAS as faces da malha para achar quem compartilha uma aresta com currTri
+        for (unsigned i = 0; i < nt; ++i)
+        {
+            if (visited[i]) continue;
+
+            const auto& otherTri = oldMesh.data().triangle(i);
+            
+            // Conta quantos vértices em comum as duas faces têm
+            int sharedVertices = 0;
+            for (int a = 0; a < 3; ++a) {
+                for (int b = 0; b < 3; ++b) {
+                    if (currTri[a] == otherTri[b]) sharedVertices++;
+                }
+            }
+
+            // Se compartilham exatamente 2 vértices, são faces vizinhas por aresta!
+            if (sharedVertices == 2)
+            {
+                visited[i] = true;
+                function(i);
+                queue.push_back({i, currLevel + 1});
+            }
+        }
+    }
+}
+
+
+// Declaração da função do professor que lê o OBJ (veja no OBJReader.cpp)
+namespace tcii::cg {
+    ObjectPtr<TriangleMesh> readOBJ(const char* filename);
+}
+
+int main()
+{
+    // 1. Carrega o triângulo mesh antigo
+    auto triangleMesh = tcii::cg::readOBJ("f-16.obj"); 
+    if (!triangleMesh) {
+        std::cerr << "Erro ao carregar o ficheiro .obj!\n";
+        return 1;
+    }
+
+    std::cout << "Ficheiro OBJ carregado com sucesso.\n";
+
+    // 2. Cria a tua estrutura avançada
+    std::cout << "Construindo a nova Mesh de Semi-Arestas...\n";
+    tcii::cg::Mesh minhaMesh(*triangleMesh);
+    std::cout << "Malha construida com sucesso!\n\n";
+
+    // =================================================================
+    // COMPARAÇÃO 1: VIZINHANÇA DE VÉRTICES
+    // =================================================================
+    std::cout << "==================================================\n";
+    std::cout << "COMPARAÇÃO 1: Vertices Vizinhos do Vertice 0\n";
+    std::cout << "==================================================\n";
+
+    // Teste na estrutura NOVA (Half-Edge)
+    auto startNew1 = std::chrono::high_resolution_clock::now();
+    int countNew1 = 0;
+    // processIncidentEdges visita as arestas, o destino da gêmea nos dá os vértices vizinhos
+    minhaMesh.processVertexKRing(0, 1, [&countNew1](auto vIdx) {
+        countNew1++;
+    });
+    auto endNew1 = std::chrono::high_resolution_clock::now();
+    auto durationNew1 = std::chrono::duration_cast<std::chrono::microseconds>(endNew1 - startNew1).count();
+    
+    std::cout << "[NOVA MESH - HalfEdge]: Encontrou " << countNew1 << " vizinhos em: " << durationNew1 << " us\n";
+
+    // Teste na estrutura ANTIGA (Busca Linear)
+    auto startOld1 = std::chrono::high_resolution_clock::now();
+    int countOld1 = 0;
+    processIncidentVerticesOld(*triangleMesh, 0, [&countOld1](auto vIdx) {
+        countOld1++;
+    });
+    auto endOld1 = std::chrono::high_resolution_clock::now();
+    auto durationOld1 = std::chrono::duration_cast<std::chrono::microseconds>(endOld1 - startOld1).count();
+
+    std::cout << "[MESH ANTIGA - Linear]: Encontrou " << countOld1 << " vizinhos em: " << durationOld1 << " us\n";
+
+
+    // =================================================================
+    // COMPARAÇÃO 2: FACE K-RING (k = 2)
+    // =================================================================
+    std::cout << "\n==================================================\n";
+    std::cout << "COMPARAÇÃO 2: Faces no 2-Anel (k=2) da Face 0\n";
+    std::cout << "==================================================\n";
+
+    // Teste na estrutura NOVA (Half-Edge)
+    auto startNew2 = std::chrono::high_resolution_clock::now();
+    int countNew2 = 0;
+    minhaMesh.processFaceKRing(0, 2, [&countNew2](auto fIdx) {
+        countNew2++;
+    });
+    auto endNew2 = std::chrono::high_resolution_clock::now();
+    auto durationNew2 = std::chrono::duration_cast<std::chrono::microseconds>(endNew2 - startNew2).count();
+
+    std::cout << "[NOVA MESH - HalfEdge]: Encontrou " << countNew2 << " faces em: " << durationNew2 << " us\n";
+
+    // Teste na estrutura ANTIGA (Busca Linear repetida)
+    auto startOld2 = std::chrono::high_resolution_clock::now();
+    int countOld2 = 0;
+    processFaceKRingOld(*triangleMesh, 0, 2, [&countOld2](auto fIdx) {
+        countOld2++;
+    });
+    auto endOld2 = std::chrono::high_resolution_clock::now();
+    auto durationOld2 = std::chrono::duration_cast<std::chrono::microseconds>(endOld2 - startOld2).count();
+
+    std::cout << "[MESH ANTIGA - Linear]: Encontrou " << countOld2 << " faces em: " << durationOld2 << " us\n";
+    std::cout << "==================================================\n";
+
+    return 0;
+}

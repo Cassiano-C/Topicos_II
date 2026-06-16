@@ -1,0 +1,42 @@
+#include "TriangleMesh.h"
+#include "Mesh.h"
+#include "RenderTerminal.h" // Inclui o novo renderizador
+#include <iostream>
+#include <chrono>
+#include <thread>
+
+namespace tcii::cg {
+    ObjectPtr<TriangleMesh> readOBJ(const char* filename);
+}
+
+int main()
+{
+    auto triangleMesh = tcii::cg::readOBJ("f-16.obj"); 
+    if (!triangleMesh) {
+        std::cerr << "Erro ao carregar o ficheiro .obj de teste!\n";
+        return 1;
+    }
+
+    std::cout << "Construindo a nova Mesh de Semi-Arestas...\n";
+    tcii::cg::Mesh minhaMesh(*triangleMesh);
+    std::cout << "Mesh construida! Iniciando renderizador em 2 segundos...\n";
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    // Limpa a tela do terminal antes de começar
+    std::cout << "\033[2J"; 
+
+    // Loop de animação: rotaciona o caça de 0 a 360 graus
+    float angulo = 0.0f;
+    for (int i = 0; i < 150; ++i) 
+    {
+        tcii::cg::renderizarMeshNoTerminal(minhaMesh, angulo);
+        
+        angulo += 4.0f; // Velocidade da rotação
+        if (angulo >= 360.0f) angulo -= 360.0f;
+
+        // Controla o frame-rate (espera 50 milissegundos por quadro)
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+
+    return 0;
+}

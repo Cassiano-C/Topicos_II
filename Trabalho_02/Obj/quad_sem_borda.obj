@@ -1,0 +1,50 @@
+# Malha Extensa Sem Borda: Capsula Prismatica Alongada
+# Vertices das extremidades (Pontas)
+v 0.0 0.0 3.0
+v 0.0 0.0 -3.0
+
+# Anel Superior (Vertices 3 a 8)
+v 1.0 0.0 1.5
+v 0.5 0.866 1.5
+v -0.5 0.866 1.5
+v -1.0 0.0 1.5
+v -0.5 -0.866 1.5
+v 0.5 -0.866 1.5
+
+# Anel Inferior (Vertices 9 a 14)
+v 1.0 0.0 -1.5
+v 0.5 0.866 -1.5
+v -0.5 0.866 -1.5
+v -1.0 0.0 -1.5
+v -0.5 -0.866 -1.5
+v 0.5 -0.866 -1.5
+
+# Cúpula Superior (Conectada a ponta de cima v1)
+f 1 3 4
+f 1 4 5
+f 1 5 6
+f 1 6 7
+f 1 7 8
+f 1 8 3
+
+# Corpo Cilindrico Extenso (Conecta o Anel Superior ao Inferior)
+f 3 9 10
+f 3 10 4
+f 4 10 11
+f 4 11 5
+f 5 11 12
+f 5 12 6
+f 6 12 13
+f 6 13 7
+f 7 13 14
+f 7 14 8
+f 8 14 9
+f 8 9 3
+
+# Cúpula Inferior (Conectada a ponta de baixo v2)
+f 2 10 9
+f 2 11 10
+f 2 12 11
+f 2 13 12
+f 2 14 13
+f 2 9 14
