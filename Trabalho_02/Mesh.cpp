@@ -191,84 +191,101 @@ Mesh::Mesh(const TriangleMesh& triangleMesh)
 
 void Mesh::printTopology() const
 {
-    std::cout << "\n==================================================\n";
-    std::cout << "          ESTRUTURA TOPOLÓGICA DA MALHA           \n";
-    std::cout << "==================================================\n";
+    std::cout << "\n╔══════════════════════════════════════════════════╗\n";
+    std::cout << "║          ESTRUTURA TOPOLÓGICA DA MALHA           ║\n";
+    std::cout << "╚══════════════════════════════════════════════════╝\n";
 
     // 1. Imprimir Vértices (Controlo de Amostragem: mostra os 10 primeiros)
-    std::cout << "\n[VÉRTICES] Total: " << _vertices.size() << "\n";
-    std::cout << std::setw(6) << "Idx" << " | " 
-              << std::setw(25) << "Posição (X, Y, Z)" << " | " 
-              << std::setw(12) << "HalfEdge Sai" << "\n";
-    std::cout << "--------------------------------------------------\n";
+    std::cout << "┌───────────────────────────────────────────────────┐\n";
+    std::cout << "│" << std::setw(33) << "[VÉRTICES] Total: " << std::setw(4) << _vertices.size() << "               │\n";
+    std::cout << "├───────┬──────────────────────────┬────────────────┤\n";
+    std::cout << "│" << std::setw(5) << "Idx" << "  │ " 
+              << std::setw(22) << "Posição (X, Y, Z)" << "     │ " 
+              << std::setw(13) << "HalfEdge Sai" << "  │\n";
     size_t limitV = std::min(_vertices.size(), size_t(10));
     for (size_t i = 0; i < limitV; ++i)
-    {
+    {   
+        std::cout << "├───────┼──────────────────────────┼────────────────┤\n";
         const auto& v = _vertices[i];
-        std::cout << std::setw(6) << i << " | "
+        std::cout << "│" << std::setw(6) << i << " │ "
                   << "(" << std::setw(6) << v.position.x << ", " 
                   << std::setw(6) << v.position.y << ", " 
-                  << std::setw(6) << v.position.z << ") | ";
-        if (v.halfEdge == null_index) std::cout << "null\n";
-        else std::cout << std::setw(12) << v.halfEdge << "\n";
+                  << std::setw(6) << v.position.z << ") │ ";
+        if (v.halfEdge == null_index) std::cout << std::setw(16) << "null │" << "\n";
+        else std::cout << std::setw(14) << v.halfEdge << " │\n";
     }
-    if (_vertices.size() > 10) std::cout << "... (" << _vertices.size() - 10 << " mais)\n";
+    std::cout << "├───────┴──────────────────────────┴────────────────┤\n";
+    if (_vertices.size() > 10) std::cout << "│                 ...E mais " << std::setw(4) << _vertices.size() - 10 << "                    │\n";
+    std::cout << "└───────────────────────────────────────────────────┘\n";
 
     // 2. Imprimir Faces (mostra as 5 primeiras)
-    std::cout << "\n[FACES] Total: " << _faces.size() << "\n";
-    std::cout << std::setw(6) << "Idx" << " | " << std::setw(15) << "HalfEdge Membro" << "\n";
-    std::cout << "--------------------------------------\n";
+    std::cout << "┌───────────────────────────┐\n";
+    std::cout << "│" << std::setw(19) << "[FACES] Total: " << std::setw(4) << _faces.size() << "    │\n";
+    std::cout << "├───────┬───────────────────┤\n";
+    std::cout << "│" << std::setw(5) << "Idx" << "  │ " 
+              << std::setw(16) << "HalfEdge Membro" << "  │\n";
     size_t limitF = std::min(_faces.size(), size_t(5));
     for (size_t i = 0; i < limitF; ++i)
-    {
-        std::cout << std::setw(6) << i << " | " << std::setw(15) << _faces[i].halfEdge << "\n";
+    {   
+        std::cout << "├───────┼───────────────────┤\n";
+        std::cout << "│" << std::setw(6) << i << " │  " 
+                  << std::setw(16) << _faces[i].halfEdge << " │\n";
     }
-    if (_faces.size() > 5) std::cout << "... (" << _faces.size() - 5 << " mais)\n";
+    std::cout << "├───────┴───────────────────┤\n";
+    if (_faces.size() > 5) std::cout << "│       ...E mais " << std::setw(4) << _faces.size() - 5 << "      │\n";
+    std::cout << "└───────────────────────────┘\n";
 
     // 3. Imprimir Semi-Arestas (O mais importante! Mostra as primeiras 15, ou seja, 5 triângulos)
-    std::cout << "\n[SEMI-ARESTAS (HALF-EDGES)] Total: " << _halfEdges.size() << "\n";
-    std::cout << std::setw(6) << "Idx" << " | " 
-              << std::setw(8) << "Origin" << " | " 
-              << std::setw(8) << "Twin" << " | " 
-              << std::setw(8) << "Next" << " | " 
-              << std::setw(8) << "Prev" << " | " 
-              << std::setw(8) << "Face" << " | "
-              << std::setw(8) << "Edge" << "\n";
-    std::cout << "----------------------------------------------------------------------\n";
+    std::cout << "┌─────────────────────────────────────────────────────────────────────────┐\n";
+    std::cout << "│" << std::setw(52) << "[SEMI-ARESTAS (HALF-EDGES)] Total: " << std::setw(4) << _halfEdges.size() << "                 │\n";
+    std::cout << "├───────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┤\n";
+    std::cout << "│" << std::setw(5) << "Idx" << "  │ " 
+              << std::setw(7) << "Origin" << "  │ " 
+              << std::setw(6) << "Twin" << "   │ " 
+              << std::setw(6) << "Next" << "   │ " 
+              << std::setw(6) << "Prev" << "   │ " 
+              << std::setw(6) << "Face" << "   │ "
+              << std::setw(6) << "Edge" << "   │\n";
     size_t limitHe = std::min(_halfEdges.size(), size_t(15));
     for (size_t i = 0; i < limitHe; ++i)
     {
+        std::cout << "├───────┼──────────┼──────────┼──────────┼──────────┼──────────┼──────────┤\n";
         const auto& he = _halfEdges[i];
-        std::cout << std::setw(6) << i << " | "
-                  << std::setw(8) << he.origin << " | ";
+        std::cout << "│" << std::setw(6) << i << " │ "
+                  << std::setw(8) << he.origin << " │ ";
         
-        if (he.twin == null_index) std::cout << std::setw(8) << "null" << " | ";
-        else std::cout << std::setw(8) << he.twin << " | ";
+        if (he.twin == null_index) std::cout << std::setw(8) << "null" << " │ ";
+        else std::cout << std::setw(8) << he.twin << " │ ";
 
-        std::cout << std::setw(8) << he.next << " | "
-                  << std::setw(8) << he.prev << " | ";
+        std::cout << std::setw(8) << he.next << " │ "
+                  << std::setw(8) << he.prev << " │ ";
 
-        if (he.face == null_index) std::cout << std::setw(8) << "BORDER" << " | ";
-        else std::cout << std::setw(8) << he.face << " | ";
+        if (he.face == null_index) std::cout << std::setw(8) << "BORDER" << " │ ";
+        else std::cout << std::setw(8) << he.face << " │ ";
 
-        std::cout << std::setw(8) << he.edge << "\n";
+        std::cout << std::setw(8) << he.edge << " │\n";
     }
-    if (_halfEdges.size() > 15) std::cout << "... (" << _halfEdges.size() - 15 << " mais)\n";
+    std::cout << "├───────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┤\n";
+    if (_halfEdges.size() > 15) std::cout << "│" << std::setw(39) << "...E mais " << std::setw(4) << _halfEdges.size() - 15 << "                              │\n";
+    std::cout << "└─────────────────────────────────────────────────────────────────────────┘\n";
 
     // 4. Imprimir Contornos de Bordas (Boundaries)
-    std::cout << "\n[CONTORNOS DE BORDA (BOUNDARIES)] Total: " << _boundaries.size() << "\n";
+    std::cout << "┌─────────────────────────────────────────────────┐\n";
+    std::cout << "│  [CONTORNOS DE BORDA (BOUNDARIES)] Total: " << std::setw(4) << _boundaries.size() << "  │\n";
+    std::cout << "├─────────────────────────────────────────────────┤\n";
     if (_boundaries.empty())
     {
-        std::cout << "Nenhum contorno detetado (Malha Fechada!).\n";
+        std::cout << "│   Nenhum contorno detetado (Malha Fechada!).    │\n";
     }
     else
     {
         for (size_t i = 0; i < _boundaries.size(); ++i)
         {
-            std::cout << "Borda " << i << " começa na HalfEdge externa: " << _boundaries[i].halfEdge << "\n";
+            std::cout << "│    Borda "<< std::setw(2) << i << " começa na HalfEdge externa: " << std::setw(4) << _boundaries[i].halfEdge << "    │\n";
         }
     }
-    std::cout << "==================================================\n\n";
+    std::cout << "└─────────────────────────────────────────────────┘\n\n";
+    std::cout << "════════════════════════════════════════════════════════════════════════════\n\n";
 }
 
 } // namespace tcii::cg
