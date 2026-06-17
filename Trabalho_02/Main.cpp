@@ -110,11 +110,15 @@ int main(int argc, char** argv)
     });
     std::cout << "Total de vertices vizinhos encontrados no 2-Anel: " << countV << "\n";
 
+    int faceTeste = 100; // Escolha uma face para testar o k-ring
     // Teste 3: Face k-Ring (Faces vizinhas até distância 1)
-    std::cout << "\n[TESTE 3] Faces adjacentes (1-Anel) da Face 0:\n";
-    minhaMesh.processFaceKRing(0, 1, [](auto faceIdx) {
+    std::cout << "\n[TESTE 3] Faces adjacentes (" << minhaMesh.faceCount() << "-Anel) da Face " << faceTeste << ":\n";
+    int countF = 0;
+    minhaMesh.processFaceKRing(faceTeste, minhaMesh.faceCount(), [&countF](auto faceIdx) {
         std::cout << " -> Face Vizinha: " << faceIdx << "\n";
+        countF++;
     });
+    std::cout << "Total de faces vizinhas encontradas no " << minhaMesh.faceCount() << "-Anel: " << countF << "\n";
 
     glutMainLoop();
 
