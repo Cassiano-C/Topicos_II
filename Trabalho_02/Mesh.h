@@ -3,7 +3,6 @@
 
 #include "TriangleMesh.h"
 #include "util/SharedObject.h"
-#include <GL/gl.h>
 #include <vector>
 #include <unordered_map>
 #include <iostream>
@@ -126,7 +125,6 @@ public:
     index_t boundaryCount() const { return (index_t)_boundaries.size(); }
 
     void printTopology() const;
-    void renderGL() const;
 
 private:
     std::vector<Vertex> _vertices;
