@@ -9,13 +9,8 @@
 #include <GL/glu.h>      // Garante os helpers de Projeção
 #include <GL/freeglut.h>
 
-// Encapsula os tipos em ElementSoA para que o DecorationSet do professor funcione corretamente
-using V_Attributes = tcii::cg::ElementSoA<tcii::cg::Vec3f>; // Vértice guarda 1 campo (Cor)
-using E_Attributes = tcii::cg::ElementSoA<tcii::cg::Vec3f>; // Aresta guarda 1 campo (Cor)
-using F_Attributes = tcii::cg::ElementSoA<tcii::cg::Vec3f>; // Face guarda 1 campo (Cor)
-using B_Attributes = tcii::cg::ElementSoA<int>;             // Borda guarda 1 campo (ID)
-
-using Decoration = tcii::cg::HEMeshDecoration<V_Attributes, E_Attributes, F_Attributes, B_Attributes>;
+// Mapeia o template de decoração conforme especificado no pipeline
+using Decoration = tcii::cg::HEMeshDecoration<tcii::cg::Vec3f, tcii::cg::Vec3f, tcii::cg::Vec3f, int>;
 
 tcii::cg::Mesh* malhaGlobal = nullptr;
 float anguloRotacao = 0.0f;
@@ -55,12 +50,7 @@ void Pipeline_Decoracao(tcii::cg::Mesh& mesh) {
     tcii::cg::index_t nb = mesh.boundaryCount();
 
     // Instancia o objeto usando o template
-    auto decoracao = Decoration::New(
-        std::max(nv, 1u), 
-        std::max(ne, 1u), 
-        std::max(nf, 1u), 
-        std::max(nb, 1u)
-    );
+    auto decoracao = Decoration::New(nv, ne, nf, nb);
 
     // Encontra as coordenadas mínimas e máximas em Y dos vértices
     float yMin = std::numeric_limits<float>::max();
@@ -184,7 +174,7 @@ void desenharCena()
     glRotatef(15.0f, 1.0f, 0.0f, 0.0f); 
 
     // Configura o renderizador para renderizar as linhas da malha (Wireframe)
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
     if (malhaGlobal) {
         // Tenta recuperar os dados do contêiner de decoração anexado

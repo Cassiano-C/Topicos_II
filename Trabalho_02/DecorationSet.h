@@ -79,16 +79,12 @@ public:
   }
 };
 
-// --- FUNÇÕES GLOBAIS DE ACESSO (CORRIGIDAS) ---
-
-// Sobrecarga para instâncias mutáveis
 template <size_t E, size_t N, typename... Ts>
 inline auto& attributes(DecorationSet_t<N, Ts...>& ds) noexcept
 {
   return attributes<E>(ds);
 }
 
-// Sobrecarga para instâncias constantes (Resolve o erro "cv-qualifiers")
 template <size_t E, size_t N, typename... Ts>
 inline const auto& attributes(const DecorationSet_t<N, Ts...>& ds) noexcept
 {

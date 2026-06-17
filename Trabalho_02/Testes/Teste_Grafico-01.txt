@@ -9,16 +9,12 @@
 #include <GL/glu.h>      // Garante os helpers de Projeção
 #include <GL/freeglut.h>
 
-// Encapsula os tipos em ElementSoA para que o DecorationSet do professor funcione corretamente
-using V_Attributes = tcii::cg::ElementSoA<tcii::cg::Vec3f>; // Vértice guarda 1 campo (Cor)
-using E_Attributes = tcii::cg::ElementSoA<tcii::cg::Vec3f>; // Aresta guarda 1 campo (Cor)
-using F_Attributes = tcii::cg::ElementSoA<tcii::cg::Vec3f>; // Face guarda 1 campo (Cor)
-using B_Attributes = tcii::cg::ElementSoA<int>;             // Borda guarda 1 campo (ID)
-
-using Decoration = tcii::cg::HEMeshDecoration<V_Attributes, E_Attributes, F_Attributes, B_Attributes>;
+// Mapeia o template de decoração conforme especificado no pipeline
+using Decoration = tcii::cg::HEMeshDecoration<tcii::cg::Vec3f, tcii::cg::Vec3f, tcii::cg::Vec3f, int>;
 
 tcii::cg::Mesh* malhaGlobal = nullptr;
 float anguloRotacao = 0.0f;
+float tempoAnimacao = 0.0f;
 
 namespace tcii::cg {
     ObjectPtr<TriangleMesh> readOBJ(const char* filename);
@@ -48,21 +44,15 @@ int defineGrupoY(float y, float yMin, float yMax) {
     return std::clamp(grupo, 1, 5); // Garante que seja estritamente entre 1 e 5
 }
 
-void Pipeline_Decoracao(tcii::cg::Mesh& mesh) {
+void Pipeline_Decoracao(tcii::cg::Mesh& mesh, float tempo) {
     tcii::cg::index_t nv = mesh.vertexCount();
     tcii::cg::index_t ne = mesh.halfEdgeCount();
     tcii::cg::index_t nf = mesh.faceCount();
     tcii::cg::index_t nb = mesh.boundaryCount();
 
-    // Instancia o objeto usando o template
-    auto decoracao = Decoration::New(
-        std::max(nv, 1u), 
-        std::max(ne, 1u), 
-        std::max(nf, 1u), 
-        std::max(nb, 1u)
-    );
+    // Instancia ou recupera a decoração existente
+    auto decoracao = Decoration::New(nv, ne, nf, nb);
 
-    // Encontra as coordenadas mínimas e máximas em Y dos vértices
     float yMin = std::numeric_limits<float>::max();
     float yMax = std::numeric_limits<float>::lowest();
 
@@ -72,87 +62,38 @@ void Pipeline_Decoracao(tcii::cg::Mesh& mesh) {
         if (y > yMax) yMax = y;
     }
 
-    std::cout << "├─► Coordenada Y Mínima: " << yMin << "\n";
-    std::cout << "└─► Coordenada Y Máxima: " << yMax << "\n";
-
-    // ESTÁGIO 1: Percorre todos os vértices e os decora de acordo com a altura
-    std::cout << "\n{ESTÁGIO 1} Decorar os Vértices:\n";
+    // ESTÁGIO 1: Percorre os vértices aplicando uma onda senoidal baseada no tempo
     for (tcii::cg::index_t i = 0; i < nv; ++i) {
         float y = mesh.vertexPosition(i).y;
-        int grupo = defineGrupoY(y, yMin, yMax);
-        tcii::cg::Vec3f cor = defineCor(grupo);
         
-        decoracao->template setAttr<0>(i, cor);
-    }
-
-    mesh.setDecoration(tcii::cg::ObjectPtr<tcii::cg::SharedObject>(decoracao.get()));
-    auto deco = mesh.getDecoration<Decoration>();
-    if (deco) {
-        std::cout << "┌┤Cores lidas nos 10 primeiros Vértices no modelo (r, g, b):\n";
-        for (tcii::cg::index_t i = 0; i < std::min(nv, 9u); ++i) {
-            tcii::cg::Vec3f cor = deco->template getAttr<0>(i);
-            std::cout << "├─► Cor do Vertice " << i << ": "
-                    << "(" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
+        // --- TRUQUE DINÂMICO ---
+        // Cria um efeito de onda: normaliza o Y e soma uma oscilação temporal senoidal
+        if (std::abs(yMax - yMin) > 1e-5f) {
+            float t = (y - yMin) / (yMax - yMin);
+            // O seno faz o valor oscilar suavemente entre -0.3 e +0.3 ao longo do tempo
+            t += std::sin(tempo + t * 3.1415f) * 0.3f;
+            t = std::clamp(t, 0.0f, 1.0f);
+            
+            int grupo = static_cast<int>(t * 5.0f) + 1;
+            grupo = std::clamp(grupo, 1, 5);
+            
+            decoracao->template setAttr<0>(i, defineCor(grupo));
+        } else {
+            decoracao->template setAttr<0>(i, defineCor(1));
         }
-        tcii::cg::Vec3f cor = deco->template getAttr<0>(9);
-        std::cout << "└─► Cor do Vertice 9: (" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
     }
 
-    // ESTÁGIO 2: Percorre todas as semi-arestas e identifica se são internas ou de borda
-    std::cout << "\n{ESTÁGIO 2} Decorar as Semi-Arestas:\n";
+    // ESTÁGIO 2 e 3 (Mantidos simplificados para performance em tempo real de render)
+    // Sincroniza as faces e arestas com os novos dados dinâmicos dos vértices
     for (tcii::cg::index_t i = 0; i < ne; ++i) {
         if (mesh.halfEdgeFace(i) == tcii::cg::null_index) {
-            // Caso seja de Borda —→ Cor Branca
             decoracao->template setAttr<1>(i, tcii::cg::Vec3f{1.0f, 1.0f, 1.0f});
-        } 
-        else {
-            // Caso seja Interna —→ Cor de acordo com sua altura
+        } else {
             tcii::cg::index_t vOrigem = mesh.halfEdgeOrigin(i);
-            float y = mesh.vertexPosition(vOrigem).y;
-            int grupo = defineGrupoY(y, yMin, yMax);
-            tcii::cg::Vec3f cor = defineCor(grupo);
-            
-            decoracao->template setAttr<1>(i, cor);
+            decoracao->template setAttr<1>(i, decoracao->template getAttr<0>(vOrigem));
         }
     }
 
-    mesh.setDecoration(tcii::cg::ObjectPtr<tcii::cg::SharedObject>(decoracao.get()));
-    deco = mesh.getDecoration<Decoration>();
-    if (deco) {
-        std::cout << "┌┤Cores lidas nas 10 primeiras Semi-Arestas no modelo (r, g, b):\n";
-        for (tcii::cg::index_t i = 0; i < std::min(ne, 9u); ++i) {
-            tcii::cg::Vec3f cor = deco->template getAttr<1>(i);
-            std::cout << "├─► Cor da Semi-Aresta " << i << ": "
-                    << "(" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
-        }
-        tcii::cg::Vec3f cor = deco->template getAttr<1>(9);
-        std::cout << "└─► Cor da Semi-Aresta 9: (" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
-    }
-
-    // ESTÁGIO 3: Percorre todas as faces e as decora de acordo com a altura
-    std::cout << "\n{ESTÁGIO 3} Decorar as Faces:\n";
-    for (tcii::cg::index_t i = 0; i < nf; ++i) {
-        tcii::cg::index_t heIdx = mesh.faceHalfEdge(i);
-        tcii::cg::index_t vOrigem = mesh.halfEdgeOrigin(heIdx);
-        float y = mesh.vertexPosition(vOrigem).y;
-        int grupo = defineGrupoY(y, yMin, yMax);
-        tcii::cg::Vec3f cor = defineCor(grupo);
-        
-        decoracao->template setAttr<2>(i, cor);
-    }
-
-    mesh.setDecoration(tcii::cg::ObjectPtr<tcii::cg::SharedObject>(decoracao.get()));
-    deco = mesh.getDecoration<Decoration>();
-    if (deco) {
-        std::cout << "┌┤Cores lidas nas 10 primeiras Faces no modelo (r, g, b):\n";
-        for (tcii::cg::index_t i = 0; i < std::min(nf, 9u); ++i) {
-            tcii::cg::Vec3f cor = deco->template getAttr<2>(i);
-            std::cout << "├─► Cor da Face " << i << ": "
-                    << "(" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
-        }
-        tcii::cg::Vec3f cor = deco->template getAttr<2>(9);
-        std::cout << "└─► Cor da Face 9: (" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
-    }
     mesh.setDecoration(tcii::cg::ObjectPtr<tcii::cg::SharedObject>(decoracao.get()));
 }
 
@@ -184,7 +125,7 @@ void desenharCena()
     glRotatef(15.0f, 1.0f, 0.0f, 0.0f); 
 
     // Configura o renderizador para renderizar as linhas da malha (Wireframe)
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
     if (malhaGlobal) {
         // Tenta recuperar os dados do contêiner de decoração anexado
@@ -243,10 +184,17 @@ void desenharCena()
 
 void atualizarAnimacao(int valor)
 {
-    anguloRotacao += 1.0f; // Incremento suave de ângulo por frame
+    anguloRotacao += 1.0f; // Mantém a rotação estável do carro
     if (anguloRotacao >= 360.0f) anguloRotacao -= 360.0f;
 
-    glutPostRedisplay(); 
+    tempoAnimacao += 0.05f; // Avança o passo da onda de cor de forma suave
+
+    // Força o pipeline a redecorar toda a topologia com base no novo tempo!
+    if (malhaGlobal) {
+        Pipeline_Decoracao(*malhaGlobal, tempoAnimacao);
+    }
+
+    glutPostRedisplay(); // Avisa o OpenGL para renderizar o frame atualizado
     glutTimerFunc(16, atualizarAnimacao, 0); 
 }
 
@@ -296,8 +244,8 @@ int main(int argc, char** argv)
     std::cout << "│\n";
     std::cout << "└─► Total de faces vizinhas encontradas: " << countF << "\n";
 
-    std::cout << "\n┌[TESTE 4] Pipeline com 3 estágios de decoração: \n";
-    Pipeline_Decoracao(minhaMesh);
+    std::cout << "\n┌[TESTE 4] Pipeline com 3 estágios de decoração (Inicializado): \n";
+    Pipeline_Decoracao(minhaMesh, 10.0f); // <--- Mude para passar o 0.0f aqui
 
     // Salva a referência na variável global para o loop do GLUT poder ler as decorações
     malhaGlobal = &minhaMesh; 
