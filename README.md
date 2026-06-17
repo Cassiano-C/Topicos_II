@@ -6,6 +6,11 @@ Para poder compilar vai ate a pasta do trabalho e use esse comando:
 ```bash
 g++ -I. *.cpp -o main
 ```
+Compilar para poder funcionar o OpenGL
+```bash
+g++ -I . *.cpp -o main -lGL -lGLU -lglut
+```
+
 Para compilar e gerar a imagen da arvore;
 ```bash
 g++ -I. *.cpp -o main && ./main && dot -Tpng range_tree.dot -o arvore.png  
