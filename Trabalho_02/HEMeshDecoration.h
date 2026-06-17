@@ -1,42 +1,51 @@
-#ifndef __HEMeshDecoration_h
-#define __HEMeshDecoration_h
+#ifndef HEMeshDecoration_h
+#define HEMeshDecoration_h
 
-#include "util/SharedObject.h"
-#include <vector>
+#include "DecorationSet.h"
+#include "util/SharedObject.h" // Presumindo o uso de SharedObject / ObjectPtr da disciplina
 
-namespace tcii::cg {
+namespace tcii::cg
+{
 
-template<typename V, typename E, typename F, typename B>
-class HEMeshDecoration : public SharedObject {
+template <typename V, typename E, typename F, typename B>
+class EMPTY_BASES HEMeshDecoration : public SharedObject,
+                                     public DecorationSet<V, E, F, B>
+{
 public:
-    static auto New(size_t nv, size_t ne, size_t nf, size_t nb) {
-        return ObjectPtr<HEMeshDecoration>(new HEMeshDecoration(nv, ne, nf, nb));
+    using Base = DecorationSet<V, E, F, B>;
+    using pointer = ObjectPtr<HEMeshDecoration>;
+
+    // Método New para instanciar usando contagens diretas (como usado no seu Main.cpp)
+    static auto New(index_t nv, index_t ne, index_t nf, index_t nb)
+    {
+        return pointer{new HEMeshDecoration{nv, ne, nf, nb}};
     }
 
-    template<size_t N, typename T>
-    void setAttr(size_t idx, T val) { getArray<N>()[idx] = val; }
+    // Facilidade para buscar atributos (get)
+    template <size_t ElementIndex>
+    auto getAttr(index_t i) const
+    {
+        // attributes<ElementIndex>(this) acessa a SoA correspondente ao elemento
+        // .template get<0>(i) pega o tipo base guardado nela (considerando SoA simples)
+        return attributes<ElementIndex>(this).template get<0>(i);
+    }
 
-    template<size_t N>
-    auto getAttr(size_t idx) { return getArray<N>()[idx]; }
+    // Facilidade para modificar atributos (set)
+    template <size_t ElementIndex, typename TField>
+    void setAttr(index_t i, TField&& value)
+    {
+        attributes<ElementIndex>(*this).template set<0>(i, std::forward<TField>(value));
+    }
 
 private:
-    HEMeshDecoration(size_t nv, size_t ne, size_t nf, size_t nb) 
-        : vData(nv), eData(ne), fData(nf), bData(nb) {}
-
-    std::vector<V> vData;
-    std::vector<E> eData;
-    std::vector<F> fData;
-    std::vector<B> bData;
-
-    // A MUDANÇA ESTÁ AQUI:
-    template<size_t N> 
-    auto& getArray() {
-        if constexpr (N == 0) return vData;
-        else if constexpr (N == 1) return eData;
-        else if constexpr (N == 2) return fData;
-        else return bData;
+    // Construtor privado que repassa os tamanhos para o DecorationSet alocar memória
+    HEMeshDecoration(index_t nv, index_t ne, index_t nf, index_t nb) :
+        Base{nv, ne, nf, nb}
+    {
+        // Alocação interna gerenciada automaticamente pelo DecorationSet
     }
 };
 
-} 
-#endif
+} // namespace tcii::cg
+
+#endif // __HEMeshDecoration_h
