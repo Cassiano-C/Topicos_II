@@ -123,6 +123,11 @@ public:
     index_t edgeCount() const { return (index_t)_edges.size(); }
     index_t faceCount() const { return (index_t)_faces.size(); }
     index_t boundaryCount() const { return (index_t)_boundaries.size(); }
+    Vec3f vertexPosition(index_t idx) const { return _vertices[idx].position; }
+    index_t halfEdgeCount() const { return (index_t)_halfEdges.size(); }
+    index_t halfEdgeFace(index_t idx) const { return _halfEdges[idx].face; }
+    index_t halfEdgeOrigin(index_t idx) const { return _halfEdges[idx].origin; }
+    index_t faceHalfEdge(index_t idx) const { return _faces[idx].halfEdge; }
 
     void printTopology() const;
 
