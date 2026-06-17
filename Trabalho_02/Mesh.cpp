@@ -271,30 +271,4 @@ void Mesh::printTopology() const
     std::cout << "==================================================\n\n";
 }
 
-void Mesh::renderGL() const
-{
-    glBegin(GL_TRIANGLES);
-
-    for (const auto& face : _faces)
-    {
-        index_t he0 = face.halfEdge;
-        if (he0 == null_index) continue;
-
-        index_t he1 = _halfEdges[he0].next;
-        index_t he2 = _halfEdges[he1].next;
-
-        const Vec3f& p0 = _vertices[_halfEdges[he0].origin].position;
-        const Vec3f& p1 = _vertices[_halfEdges[he1].origin].position;
-        const Vec3f& p2 = _vertices[_halfEdges[he2].origin].position;
-
-        // Enviamos os vértices diretamente para a tela
-        glVertex3f(p0.x, p0.y, p0.z);
-        glVertex3f(p1.x, p1.y, p1.z);
-        glVertex3f(p2.x, p2.y, p2.z);
-    }
-
-    glEnd();
-}
-
-
 } // namespace tcii::cg
