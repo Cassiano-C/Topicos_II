@@ -6,5 +6,5 @@ A2 (Construção, iteradores e vizinhos): Concluída completamente
 A3 (Extensão da decoração): Concluída completamente
 A4 (Testes e pipelines): Concluída completamente
 
-Link do vídeo (Google Drive): https://drive.google.com/file/d/1LyhJhRJBp04-0eN3Bh0sY1Z4bqp9CXUy/view?usp=sharing
+Link do vídeo (Google Drive): https://drive.google.com/file/d/1DiyLHoeKVZKnJEHXUc1r8FHTl8FPaTBp/view?usp=sharing
 OBS: O vídeo tem mais de 15 minutos pois explicamos detalhadamente os pipelines dos estágios e sua execução.
