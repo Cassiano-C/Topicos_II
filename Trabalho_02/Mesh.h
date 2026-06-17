@@ -3,7 +3,6 @@
 
 #include "TriangleMesh.h"
 #include "util/SharedObject.h"
-#include <GL/gl.h>
 #include <vector>
 #include <unordered_map>
 #include <iostream>
