@@ -21,19 +21,15 @@ public:
         return pointer{new HEMeshDecoration{nv, ne, nf, nb}};
     }
 
-    // Facilidade para buscar atributos (get)
     template <size_t ElementIndex>
-    auto getAttr(index_t i) const
-    {
-        // attributes<ElementIndex>(this) acessa a SoA correspondente ao elemento
-        // .template get<0>(i) pega o tipo base guardado nela (considerando SoA simples)
-        return attributes<ElementIndex>(this).template get<0>(i);
+    auto getAttr(tcii::cg::index_t i) const {
+        // Acessa o conjunto de atributos do elemento e pega o campo 0 (nossa cor/inteiro)
+        return attributes<ElementIndex>(*this).template get<0>(i);
     }
 
-    // Facilidade para modificar atributos (set)
     template <size_t ElementIndex, typename TField>
-    void setAttr(index_t i, TField&& value)
-    {
+    void setAttr(tcii::cg::index_t i, TField&& value) {
+        // Grava o valor no campo 0 do elemento correspondente
         attributes<ElementIndex>(*this).template set<0>(i, std::forward<TField>(value));
     }
 

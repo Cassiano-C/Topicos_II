@@ -207,6 +207,8 @@ void Mesh::printTopology() const
     {   
         std::cout << "├───────┼──────────────────────────┼────────────────┤\n";
         const auto& v = _vertices[i];
+        // Ativa a formatação de 5 casas decimais fixas
+        std::cout << std::fixed << std::setprecision(3);
         std::cout << "│" << std::setw(6) << i << " │ "
                   << "(" << std::setw(6) << v.position.x << ", " 
                   << std::setw(6) << v.position.y << ", " 

@@ -5,9 +5,17 @@
 #include <limits>
 #include <algorithm>
 #include <cmath>
+#include <GL/gl.h>
+#include <GL/glu.h>      // Garante os helpers de Projeção
+#include <GL/freeglut.h>
 
-// Mapeia o template
-using Decoration = tcii::cg::HEMeshDecoration<tcii::cg::Vec3f, tcii::cg::Vec3f, tcii::cg::Vec3f, int>;
+// Encapsula os tipos em ElementSoA para que o DecorationSet do professor funcione corretamente
+using V_Attributes = tcii::cg::ElementSoA<tcii::cg::Vec3f>; // Vértice guarda 1 campo (Cor)
+using E_Attributes = tcii::cg::ElementSoA<tcii::cg::Vec3f>; // Aresta guarda 1 campo (Cor)
+using F_Attributes = tcii::cg::ElementSoA<tcii::cg::Vec3f>; // Face guarda 1 campo (Cor)
+using B_Attributes = tcii::cg::ElementSoA<int>;             // Borda guarda 1 campo (ID)
+
+using Decoration = tcii::cg::HEMeshDecoration<V_Attributes, E_Attributes, F_Attributes, B_Attributes>;
 
 tcii::cg::Mesh* malhaGlobal = nullptr;
 float anguloRotacao = 0.0f;
@@ -40,16 +48,21 @@ int defineGrupoY(float y, float yMin, float yMax) {
     return std::clamp(grupo, 1, 5); // Garante que seja estritamente entre 1 e 5
 }
 
-void Pipeline_Decoração(tcii::cg::Mesh& mesh) {
+void Pipeline_Decoracao(tcii::cg::Mesh& mesh) {
     tcii::cg::index_t nv = mesh.vertexCount();
     tcii::cg::index_t ne = mesh.halfEdgeCount();
     tcii::cg::index_t nf = mesh.faceCount();
     tcii::cg::index_t nb = mesh.boundaryCount();
 
     // Instancia o objeto usando o template
-    auto decoracao = Decoration::New(nv, ne, nf, nb);
+    auto decoracao = Decoration::New(
+        std::max(nv, 1u), 
+        std::max(ne, 1u), 
+        std::max(nf, 1u), 
+        std::max(nb, 1u)
+    );
 
-    // Encontra as coordenadas mínimas em Y dos vértices
+    // Encontra as coordenadas mínimas e máximas em Y dos vértices
     float yMin = std::numeric_limits<float>::max();
     float yMax = std::numeric_limits<float>::lowest();
 
@@ -62,12 +75,7 @@ void Pipeline_Decoração(tcii::cg::Mesh& mesh) {
     std::cout << "├─► Coordenada Y Mínima: " << yMin << "\n";
     std::cout << "└─► Coordenada Y Máxima: " << yMax << "\n";
 
-    // ESTÁGIO 1: Percorre todos os vértices e os decora de acordo com a altura deles na malha
-    //Muito alto —→ Pinta com a cor vermelha
-    //Alto —→ Pinta com a cor laranja
-    //Médio —→ Pinta com a cor amarela
-    //Baixo —→ Pinta com a cor verde
-    //Muito baixo —→ Pinta com a cor azul
+    // ESTÁGIO 1: Percorre todos os vértices e os decora de acordo com a altura
     std::cout << "\n{ESTÁGIO 1} Decorar os Vértices:\n";
     for (tcii::cg::index_t i = 0; i < nv; ++i) {
         float y = mesh.vertexPosition(i).y;
@@ -90,17 +98,15 @@ void Pipeline_Decoração(tcii::cg::Mesh& mesh) {
         std::cout << "└─► Cor do Vertice 9: (" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
     }
 
-    // ESTÁGIO 2: Percorre todas as semi-arestas e identifica se elas são arestas internas ou arestas de borda
-    //Caso seja Interna —→ A semi-aresta seja decorada de acordo com sua altura na malha (Semelhante ao Estágio 1)
-    //Caso seja de Borda —→ A semi-aresta é pintada de branco (No fim a malha fica com um contorno branco)
+    // ESTÁGIO 2: Percorre todas as semi-arestas e identifica se são internas ou de borda
     std::cout << "\n{ESTÁGIO 2} Decorar as Semi-Arestas:\n";
     for (tcii::cg::index_t i = 0; i < ne; ++i) {
-        // Verifica se pertence a um contorno comparando com a constante nativa
         if (mesh.halfEdgeFace(i) == tcii::cg::null_index) {
+            // Caso seja de Borda —→ Cor Branca
             decoracao->template setAttr<1>(i, tcii::cg::Vec3f{1.0f, 1.0f, 1.0f});
         } 
         else {
-            // Aresta interna assume o padrão do grupo do seu vértice de origem
+            // Caso seja Interna —→ Cor de acordo com sua altura
             tcii::cg::index_t vOrigem = mesh.halfEdgeOrigin(i);
             float y = mesh.vertexPosition(vOrigem).y;
             int grupo = defineGrupoY(y, yMin, yMax);
@@ -120,10 +126,10 @@ void Pipeline_Decoração(tcii::cg::Mesh& mesh) {
                     << "(" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
         }
         tcii::cg::Vec3f cor = deco->template getAttr<1>(9);
-            std::cout << "└─► Cor da Semi-Aresta 9: (" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
+        std::cout << "└─► Cor da Semi-Aresta 9: (" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
     }
 
-    // ESTÁGIO 3: Percorre todas as faces e as decora de acordo com a alturas delas na malha (Semelhante ao Estágio 1)
+    // ESTÁGIO 3: Percorre todas as faces e as decora de acordo com a altura
     std::cout << "\n{ESTÁGIO 3} Decorar as Faces:\n";
     for (tcii::cg::index_t i = 0; i < nf; ++i) {
         tcii::cg::index_t heIdx = mesh.faceHalfEdge(i);
@@ -145,10 +151,103 @@ void Pipeline_Decoração(tcii::cg::Mesh& mesh) {
                     << "(" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
         }
         tcii::cg::Vec3f cor = deco->template getAttr<2>(9);
-            std::cout << "└─► Cor da Face 9: (" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
+        std::cout << "└─► Cor da Face 9: (" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
     }
-    // Tem que clocar a decoração na malha para que ela seja renderizada, caso contrário a janela gráfica não vai mostrar as cores decorativas
     mesh.setDecoration(tcii::cg::ObjectPtr<tcii::cg::SharedObject>(decoracao.get()));
+}
+
+// Configura a perspectiva para o objeto não achatar ou sumir ao mudar o tamanho da janela
+void redimensionarJanela(int largura, int altura)
+{
+    if (altura == 0) altura = 1;
+    float aspecto = (float)largura / (float)altura;
+
+    glViewport(0, 0, largura, altura);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(45.0, aspecto, 0.1, 1000.0);
+
+    glMatrixMode(GL_MODELVIEW);
+}
+
+void desenharCena()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+    glLoadIdentity(); 
+
+    // Posiciona a câmera em uma distância confortável (Z = 40) e ligeiramente inclinada para cima
+    gluLookAt(0.0, 15.0, 40.0,  0.0, 0.0, 0.0,  0.0, 1.0, 0.0);
+
+    // Sistema de rotação contínua automática
+    glRotatef(anguloRotacao, 0.0f, 1.0f, 0.0f);
+    glRotatef(15.0f, 1.0f, 0.0f, 0.0f); 
+
+    // Configura o renderizador para renderizar as linhas da malha (Wireframe)
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    
+    if (malhaGlobal) {
+        // Tenta recuperar os dados do contêiner de decoração anexado
+        auto* deco = malhaGlobal->getDecoration<Decoration>();
+
+        const auto& listaFaces = malhaGlobal->faces();
+        const auto& listaVertices = malhaGlobal->vertices();
+        const auto& listaHalfEdges = malhaGlobal->halfEdges();
+
+        // Varre todas as faces processando as conexões via Half-Edge
+        for (size_t fIdx = 0; fIdx < listaFaces.size(); ++fIdx)
+        {
+            unsigned he0 = listaFaces[fIdx].halfEdge;
+            if (he0 == -1u) continue;
+
+            unsigned nextHe = listaHalfEdges[he0].next;
+            unsigned prevHe = listaHalfEdges[he0].prev;
+            
+            unsigned v0 = listaHalfEdges[he0].origin;
+            unsigned v1 = listaHalfEdges[nextHe].origin;
+            unsigned v2 = listaHalfEdges[prevHe].origin;
+
+            glBegin(GL_TRIANGLES);
+                // --- VÉRTICE 0 ---
+                if (deco) {
+                    tcii::cg::Vec3f c0 = deco->template getAttr<0>(v0);
+                    glColor3f(c0.x, c0.y, c0.z); // Aplica a cor térmica salva
+                } else {
+                    glColor3f(0.0f, 1.0f, 0.4f); // Cor sólida padrão alternativa
+                }
+                glVertex3f(listaVertices[v0].position.x, listaVertices[v0].position.y, listaVertices[v0].position.z);
+                
+                // --- VÉRTICE 1 ---
+                if (deco) {
+                    tcii::cg::Vec3f c1 = deco->template getAttr<0>(v1);
+                    glColor3f(c1.x, c1.y, c1.z);
+                } else {
+                    glColor3f(0.0f, 1.0f, 0.4f);
+                }
+                glVertex3f(listaVertices[v1].position.x, listaVertices[v1].position.y, listaVertices[v1].position.z);
+                
+                // --- VÉRTICE 2 ---
+                if (deco) {
+                    tcii::cg::Vec3f c2 = deco->template getAttr<0>(v2);
+                    glColor3f(c2.x, c2.y, c2.z);
+                } else {
+                    glColor3f(0.0f, 1.0f, 0.4f);
+                }
+                glVertex3f(listaVertices[v2].position.x, listaVertices[v2].position.y, listaVertices[v2].position.z);
+            glEnd();
+        }
+    }
+
+    glutSwapBuffers(); 
+}
+
+void atualizarAnimacao(int valor)
+{
+    anguloRotacao += 1.0f; // Incremento suave de ângulo por frame
+    if (anguloRotacao >= 360.0f) anguloRotacao -= 360.0f;
+
+    glutPostRedisplay(); 
+    glutTimerFunc(16, atualizarAnimacao, 0); 
 }
 
 int main(int argc, char** argv)
@@ -158,7 +257,7 @@ int main(int argc, char** argv)
     std::cout << "│ Alunos: Ari Vargas Leal Filho, Cassiano Carvalho de Souza, Lucas Lacerda Arruda. │\n";
     std::cout << "└──────────────────────────────────────────────────────────────────────────────────┘\n";
 
-    //Procura pelo arquivo .obj especificado na linha de comando, caso não encontre ele usa o "bunny.obj"
+    // Procura pelo arquivo .obj passado, caso contrário recorre ao padrão seguro
     std::string caminhoOBJ = argc > 1 ? argv[1] : "bunny.obj";
     std::cout << "\nCarregando o arquivo OBJ: " << caminhoOBJ << "\n";
     auto triangleMesh = tcii::cg::readOBJ(caminhoOBJ.c_str()); 
@@ -170,10 +269,7 @@ int main(int argc, char** argv)
     std::cout << "Construindo a nova Mesh de Semi-Arestas...\n";
     tcii::cg::Mesh minhaMesh(*triangleMesh);
     
-    // Faz o print no terminal para ver as informações da malha antes de abrir a janela gráfica
-    std::cout << "Janela gráfica configurada! Abrindo viewport...\n";
-
-    // Imprime a topologia
+    // Executa e imprime as verificações topológicas exigidas no terminal
     minhaMesh.printTopology();
 
     std::cout << "─[TESTE 1] Arestas incidentes no Vertice 0:\n";
@@ -181,7 +277,6 @@ int main(int argc, char** argv)
         std::cout << "──► Conectado a Edge: " << edgeIdx << "\n";
     });
 
-    // Teste 2: Vertex k-Ring (Vizinhos até distância 2)
     std::cout << "\n┌[TESTE 2] Vertices no 2-Anel do Vertice 0:\n";
     int countV = 0;
     minhaMesh.processVertexKRing(0, 2, [&countV](auto vertexIdx) {
@@ -191,8 +286,7 @@ int main(int argc, char** argv)
     std::cout << "│\n";
     std::cout << "└─► Total de vertices vizinhos encontrados no 2-Anel: " << countV << "\n";
 
-    int faceTeste = 0; // Escolha uma face para testar o k-ring
-    // Teste 3: Face k-Ring (Faces vizinhas até distância 1)
+    int faceTeste = minhaMesh.faceCount() > 100 ? 100 : 0;
     std::cout << "\n┌[TESTE 3] Faces adjacentes (" << minhaMesh.faceCount() << "-Anel) da Face " << faceTeste << ":\n";
     int countF = 0;
     minhaMesh.processFaceKRing(faceTeste, minhaMesh.faceCount(), [&countF](auto faceIdx) {
@@ -200,10 +294,30 @@ int main(int argc, char** argv)
         countF++;
     });
     std::cout << "│\n";
-    std::cout << "└─► Total de faces vizinhas encontradas no " << minhaMesh.faceCount() << "-Anel: " << countF << "\n";
+    std::cout << "└─► Total de faces vizinhas encontradas: " << countF << "\n";
 
     std::cout << "\n┌[TESTE 4] Pipeline com 3 estágios de decoração: \n";
-    Pipeline_Decoração(minhaMesh);
+    Pipeline_Decoracao(minhaMesh);
+
+    // Salva a referência na variável global para o loop do GLUT poder ler as decorações
+    malhaGlobal = &minhaMesh; 
+
+    // Inicialização da interface gráfica do OpenGL via GLUT
+    std::cout << "\nJanela gráfica configurada! Abrindo viewport...\n";
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(800, 600);
+    glutCreateWindow("Trabalho 02 - Visualizador Mesh Decorada (Half-Edge)");
+
+    glEnable(GL_DEPTH_TEST); 
+    glClearColor(0.05f, 0.05f, 0.05f, 1.0f); // Fundo grafite escuro fosco
+
+    // Associa os callbacks essenciais para desenhar, redimensionar e animar
+    glutDisplayFunc(desenharCena);
+    glutReshapeFunc(redimensionarJanela); 
+    glutTimerFunc(16, atualizarAnimacao, 0);
+
+    glutMainLoop();
 
     return 0;
 }
