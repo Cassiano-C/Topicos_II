@@ -87,6 +87,7 @@ void Pipeline_Decoracao(tcii::cg::Mesh& mesh) {
 
     mesh.setDecoration(tcii::cg::ObjectPtr<tcii::cg::SharedObject>(decoracao.get()));
     auto deco = mesh.getDecoration<Decoration>();
+    
     if (deco) {
         std::cout << "┌┤Cores lidas nos 10 primeiros Vértices no modelo (r, g, b):\n";
         for (tcii::cg::index_t i = 0; i < std::min(nv, 9u); ++i) {
@@ -104,7 +105,7 @@ void Pipeline_Decoracao(tcii::cg::Mesh& mesh) {
         if (mesh.halfEdgeFace(i) == tcii::cg::null_index) {
             // Caso seja de Borda —→ Cor Branca
             decoracao->template setAttr<1>(i, tcii::cg::Vec3f{1.0f, 1.0f, 1.0f});
-        } 
+        }
         else {
             // Caso seja Interna —→ Cor de acordo com sua altura
             tcii::cg::index_t vOrigem = mesh.halfEdgeOrigin(i);
@@ -118,6 +119,7 @@ void Pipeline_Decoracao(tcii::cg::Mesh& mesh) {
 
     mesh.setDecoration(tcii::cg::ObjectPtr<tcii::cg::SharedObject>(decoracao.get()));
     deco = mesh.getDecoration<Decoration>();
+
     if (deco) {
         std::cout << "┌┤Cores lidas nas 10 primeiras Semi-Arestas no modelo (r, g, b):\n";
         for (tcii::cg::index_t i = 0; i < std::min(ne, 9u); ++i) {
@@ -153,7 +155,6 @@ void Pipeline_Decoracao(tcii::cg::Mesh& mesh) {
         tcii::cg::Vec3f cor = deco->template getAttr<2>(9);
         std::cout << "└─► Cor da Face 9: (" << cor.x << ", " << cor.y << ", " << cor.z << ")\n";
     }
-    mesh.setDecoration(tcii::cg::ObjectPtr<tcii::cg::SharedObject>(decoracao.get()));
 }
 
 // Configura a perspectiva para o objeto não achatar ou sumir ao mudar o tamanho da janela
